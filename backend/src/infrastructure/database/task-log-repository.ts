@@ -1,7 +1,8 @@
-import { and, count, desc, eq, getTableColumns, gte, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, getTableColumns, gte, sql, type SQL } from 'drizzle-orm';
 import type { Page } from '../../domain/pagination.js';
 import { TASK_LOG_STATUSES, type TaskLog, type TaskLogStatus } from '../../domain/task.js';
 import type {
+  HourlyCount,
   NewTaskLog,
   TaskLogEntry,
   TaskLogListQuery,
@@ -48,5 +49,18 @@ export class DrizzleTaskLogRepository implements TaskLogRepository {
     const counts = Object.fromEntries(TASK_LOG_STATUSES.map((s) => [s, 0])) as Record<TaskLogStatus, number>;
     for (const { status, total } of rows) counts[status] = total;
     return counts;
+  }
+
+  async countByHourSince(since: Date): Promise<HourlyCount[]> {
+    // AT TIME ZONE 'UTC' makes the bucket independent of the connection's timezone setting.
+    const hour = sql<Date>`date_trunc('hour', ${taskLogs.createdAt} AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'`.mapWith(
+      (value: Date | string) => new Date(value),
+    );
+    const rows = await this.db
+      .select({ hour, status: taskLogs.status, count: count() })
+      .from(taskLogs)
+      .where(gte(taskLogs.createdAt, since))
+      .groupBy(hour, taskLogs.status);
+    return rows;
   }
 }

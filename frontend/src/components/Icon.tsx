@@ -3,6 +3,7 @@ const PATHS = {
   x: 'M6 6l12 12M18 6L6 18',
   pause: 'M9 6v12M15 6v12',
   play: 'M8 5.5v13l11-6.5z',
+  send: 'M21 3L10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z',
   retry: 'M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5',
   plus: 'M12 5v14M5 12h14',
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
@@ -15,7 +16,12 @@ const PATHS = {
   logs: 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7',
   clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
   chevron: 'M9 6l6 6-6 6',
+  back: 'M15 6l-6 6 6 6',
   dot: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  alert: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v5M12 16h.01',
+  checkCircle: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 12.5l2.5 2.5 4.5-5',
+  xCircle: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6',
+  webhook: 'M9 16.5a3.5 3.5 0 1 1-1.5-2.9L11 8M15 7.5a3.5 3.5 0 1 1-1 6.8L10 21M18 13a3.5 3.5 0 1 1 0 7c-1.4 0-2.6-.8-3.2-2H8',
 } as const;
 
 export type IconName = keyof typeof PATHS;
@@ -28,7 +34,7 @@ export function Icon({ name, className = 'size-4' }: { name: IconName; className
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={2}
+      strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

@@ -52,6 +52,17 @@ function registerShutdown(server: Server, logger: Logger, closers: Closer[]): vo
 }
 
 main().catch((err: unknown) => {
-  console.error(err instanceof Error ? err.message : err);
+  console.error(describeStartupError(err));
   process.exit(1);
 });
+
+/** Includes the cause chain: a failed migration only says "Failed query", the cause says why. */
+function describeStartupError(err: unknown): string {
+  const lines: string[] = [];
+  let current: unknown = err;
+  while (current instanceof Error && lines.length < 5) {
+    lines.push(lines.length === 0 ? current.message : `Caused by: ${current.message}`);
+    current = current.cause;
+  }
+  return lines.length > 0 ? lines.join('\n') : String(err);
+}

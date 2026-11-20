@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { LoginPage } from '../features/auth/LoginPage';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { LogsPage } from '../features/logs/LogsPage';
+import { TaskDetailPage } from '../features/tasks/TaskDetailPage';
 import { EditTaskPage, NewTaskPage } from '../features/tasks/TaskFormPage';
 import { TasksPage } from '../features/tasks/TasksPage';
 import { AppShell } from './AppShell';
@@ -31,6 +32,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <DashboardPage /> },
       { path: 'tasks', element: <TasksPage /> },
       { path: 'tasks/new', element: <NewTaskPage /> },
+      { path: 'tasks/:id', element: <TaskDetailPage /> },
       { path: 'tasks/:id/edit', element: <EditTaskPage /> },
       { path: 'logs', element: <LogsPage /> },
       { path: '*', element: <NotFound /> },

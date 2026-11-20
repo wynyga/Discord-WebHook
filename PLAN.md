@@ -140,15 +140,17 @@ Validation rules:
 
 ### Design references (Dribbble)
 
+Chosen after viewing the shots in a browser (the first picks were made from titles only and replaced):
+
 | Shot | Used for |
 |---|---|
-| [Bit Cron Dashboard](https://dribbble.com/shots/14694142-Bit-Cron-Dashboard) (Bit Code Technologies) | Main reference: overall layout of a cron-job manager (sidebar, stat cards, job list); its [login page](https://dribbble.com/tags/bit_cron) too |
-| [Cron Schedule Screen](https://dribbble.com/shots/24948563-Cron-Schedule-Screen) (MAGIKA) | Schedule input in the task form: presets (hourly, daily, weekly) plus a custom cron field with a human-readable preview |
-| [GraphCMS Webhook Logs view](https://dribbble.com/shots/16818051-GraphCMS-Webhook-Logs-view) | Log viewer: table with status code, time and an expandable detail row |
-| [Create Webhook](https://dribbble.com/shots/16828466-Create-Webhook) (FineTune) | Form layout for the webhook URL and payload |
+| [Cron job sheet](https://dribbble.com/shots/27844932-Cron-job-sheet) (Faizal Sukaimi) | Main reference: monochrome devtool look in light and dark; task page with Run now / Pause, failure alert, schedule split into fields, details list, next 5 runs, Overview / Runs tabs |
+| [Webhooks](https://dribbble.com/shots/26567727-Webhooks) (Prakash Ghodke) | Overview page: figure strip with sparklines (sent, delivered, failed, retried), hourly stacked activity, recent deliveries with response-code badges |
+| [Cron Schedule Screen](https://dribbble.com/shots/24948563-Cron-Schedule-Screen) (MAGIKA) | Schedule presets plus custom cron with a readable preview in the task form |
 
-Style: light and dark theme, neutral surfaces with Discord blurple (`#5865F2`) as the accent; status
-colors green (active/success), amber (paused/retrying), red (failed).
+Style: neutral surfaces, ink-colored primary actions, hairline borders, Geist and Geist Mono (mono for
+cron, URLs, response codes and durations). Color is reserved for status: green (active/success),
+amber (retrying), red (failed); paused is neutral gray. Chart fills use the dataviz status palette.
 
 ### Web platform rules (from `modern-web-guidance`)
 

@@ -4,6 +4,7 @@ import type {
   LoginResult,
   Paged,
   Task,
+  TaskDetail,
   TaskInput,
   TaskLog,
   TaskLogStatus,
@@ -36,7 +37,7 @@ export const authApi = {
 
 export const tasksApi = {
   list: (params: TaskListParams = {}) => apiRequest<Paged<Task>>('/tasks', { query: { ...params } }),
-  get: (id: string) => apiRequest<One<Task>>(`/tasks/${id}`).then(unwrap),
+  get: (id: string) => apiRequest<One<TaskDetail>>(`/tasks/${id}`).then(unwrap),
   create: (input: TaskInput) => apiRequest<One<Task>>('/tasks', { method: 'POST', body: input }).then(unwrap),
   update: (id: string, changes: TaskUpdate) =>
     apiRequest<One<Task>>(`/tasks/${id}`, { method: 'PATCH', body: changes }).then(unwrap),

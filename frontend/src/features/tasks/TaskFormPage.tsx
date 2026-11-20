@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { ApiError } from '../../api/client';
 import type { Task } from '../../api/types';
 import { Field } from '../../components/Field';
+import { Icon } from '../../components/Icon';
 import { ErrorState, LoadingState, PageHeader } from '../../components/Layout';
 import { useToast } from '../../components/Toasts';
 import { CUSTOM_PRESET, describeCron, SCHEDULE_PRESETS } from '../../lib/cron';
@@ -42,26 +43,34 @@ function TaskFormScreen({ mode, task }: { mode: FormMode; task?: Task }) {
   const actions = useTaskActions();
 
   const submit = async (values: TaskFormValues) => {
+    // Land on the task itself, where its schedule and next runs confirm what was saved.
     if (mode === 'create') {
       const created = await actions.create.mutateAsync(toTaskInput(values));
       notify(`Task "${created.name}" created and scheduled.`, 'success');
+      navigate(`/tasks/${created.id}`);
     } else {
       const updated = await actions.update.mutateAsync({ id: task!.id, changes: toTaskUpdate(values) });
       notify(`Task "${updated.name}" saved.`, 'success');
+      navigate(`/tasks/${updated.id}`);
     }
-    navigate('/tasks');
   };
 
   return (
     <>
       <PageHeader
-        title={mode === 'create' ? 'New task' : `Edit "${task?.name}"`}
+        eyebrow={
+          <Link to={task ? `/tasks/${task.id}` : '/tasks'} className="inline-flex items-center gap-1 text-xs text-muted hover:text-fg">
+            <Icon name="back" className="size-3.5" /> {task ? task.name : 'Tasks'}
+          </Link>
+        }
+        title={mode === 'create' ? 'New task' : 'Edit task'}
         description="Send a message to a Discord channel on a schedule."
       />
       <TaskForm
         mode={mode}
         initial={task ? valuesFromTask(task) : emptyValues()}
         maskedWebhook={task?.webhookUrl}
+        cancelTo={task ? `/tasks/${task.id}` : '/tasks'}
         onSubmit={submit}
       />
     </>
@@ -90,10 +99,11 @@ interface TaskFormProps {
   mode: FormMode;
   initial: TaskFormValues;
   maskedWebhook?: string;
+  cancelTo: string;
   onSubmit: (values: TaskFormValues) => Promise<void>;
 }
 
-export function TaskForm({ mode, initial, maskedWebhook, onSubmit }: TaskFormProps) {
+export function TaskForm({ mode, initial, maskedWebhook, cancelTo, onSubmit }: TaskFormProps) {
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<TaskFormErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -180,8 +190,8 @@ export function TaskForm({ mode, initial, maskedWebhook, onSubmit }: TaskFormPro
   return (
     <form noValidate onSubmit={handleSubmit} aria-label={mode === 'create' ? 'New task' : 'Edit task'}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <section className="card flex flex-col gap-5 p-6" aria-labelledby="section-basics">
-          <h2 id="section-basics" className="text-lg font-semibold">
+        <section className="card flex flex-col gap-5 p-5" aria-labelledby="section-basics">
+          <h2 id="section-basics" className="font-medium">
             Task
           </h2>
 
@@ -218,7 +228,7 @@ export function TaskForm({ mode, initial, maskedWebhook, onSubmit }: TaskFormPro
               {[...SCHEDULE_PRESETS, { id: CUSTOM_PRESET, label: 'Custom cron', cron: '' }].map((preset) => (
                 <label
                   key={preset.id}
-                  className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-line px-3 has-checked:border-accent has-checked:bg-accent-soft"
+                  className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-line px-3 py-2 hover:border-line-strong has-checked:border-ink has-checked:bg-surface-2"
                 >
                   <input
                     type="radio"
@@ -228,9 +238,9 @@ export function TaskForm({ mode, initial, maskedWebhook, onSubmit }: TaskFormPro
                     checked={values.schedulePreset === preset.id}
                     onChange={() => update('schedulePreset', preset.id, 'schedule')}
                   />
-                  <span className="text-sm">
+                  <span className="flex flex-col">
                     {preset.label}
-                    {preset.cron && <code className="ms-2 font-mono text-xs text-muted">{preset.cron}</code>}
+                    {preset.cron && <code className="text-xs whitespace-nowrap text-muted">{preset.cron}</code>}
                   </span>
                 </label>
               ))}
@@ -323,8 +333,8 @@ export function TaskForm({ mode, initial, maskedWebhook, onSubmit }: TaskFormPro
           </Field>
         </section>
 
-        <section className="card flex flex-col gap-5 p-6" aria-labelledby="section-message">
-          <h2 id="section-message" className="text-lg font-semibold">
+        <section className="card flex flex-col gap-5 p-5" aria-labelledby="section-message">
+          <h2 id="section-message" className="font-medium">
             Message and retries
           </h2>
 
@@ -418,7 +428,7 @@ export function TaskForm({ mode, initial, maskedWebhook, onSubmit }: TaskFormPro
       </div>
 
       <div className="mt-6 flex flex-wrap justify-end gap-3">
-        <Link to="/tasks" className="btn">
+        <Link to={cancelTo} className="btn">
           Cancel
         </Link>
         <button type="submit" className="btn btn-primary" disabled={submitting}>

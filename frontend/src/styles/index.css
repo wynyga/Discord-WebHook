@@ -1,7 +1,11 @@
 @import 'tailwindcss';
 
 /*
- * Theme
+ * Design: neutral, monochrome devtool look (Dribbble: "Cron job sheet" by Faizal Sukaimi, "Webhooks"
+ * by Prakash Ghodke). Ink-colored primary actions, hairline borders, mono for machine values; color
+ * is reserved for status.
+ *
+ * Theme mechanics (modern-web-guidance: dark-mode, dark-mode-toggle):
  * - Each token has a light and a dark value.
  * - Fallback: the media query follows the system scheme (browsers without light-dark()).
  * - Upgrade: light-dark() follows `color-scheme`, which the theme toggle sets through the <meta>.
@@ -10,38 +14,45 @@
 :root {
   color-scheme: light dark;
 
-  --light-canvas: #f5f6fa;
-  --dark-canvas: #0f1117;
+  --light-canvas: #fafaf9;
+  --dark-canvas: #0b0b0b;
   --light-surface: #ffffff;
-  --dark-surface: #171a23;
-  --light-surface-2: #eef0f5;
-  --dark-surface-2: #212533;
-  --light-line: #dfe2ea;
-  --dark-line: #2d3242;
-  --light-line-strong: #767c8e;
-  --dark-line-strong: #7a8196;
-  --light-fg: #1a1d29;
-  --dark-fg: #e8eaf1;
-  --light-muted: #555b6c;
-  --dark-muted: #a3a9b9;
-  --light-accent: #4752c4;
-  --dark-accent: #8b93f5;
-  --light-on-accent: #ffffff;
-  --dark-on-accent: #0c0e1c;
-  --light-accent-soft: #e8eafd;
-  --dark-accent-soft: #252a52;
-  --light-success: #0d6b39;
-  --dark-success: #74e3a5;
-  --light-success-soft: #e1f4e8;
-  --dark-success-soft: #12301f;
-  --light-warning: #8a5000;
-  --dark-warning: #f7c766;
-  --light-warning-soft: #fcefd3;
-  --dark-warning-soft: #392a0d;
-  --light-danger: #b02a21;
-  --dark-danger: #ff9389;
-  --light-danger-soft: #fce6e4;
-  --dark-danger-soft: #3d1614;
+  --dark-surface: #151515;
+  --light-surface-2: #f4f4f3;
+  --dark-surface-2: #1e1e1e;
+  --light-line: #e7e6e3;
+  --dark-line: #2a2a2a;
+  --light-line-strong: #8a8883;
+  --dark-line-strong: #6e6d69;
+  --light-fg: #0b0b0b;
+  --dark-fg: #f0efec;
+  --light-muted: #5f5d58;
+  --dark-muted: #a3a29b;
+  --light-ink: #0b0b0b;
+  --dark-ink: #f0efec;
+  --light-on-ink: #ffffff;
+  --dark-on-ink: #0b0b0b;
+  --light-accent: #2a78d6;
+  --dark-accent: #3987e5;
+  --light-success: #0b6b2e;
+  --dark-success: #4fd17a;
+  --light-success-soft: #e7f5ec;
+  --dark-success-soft: #13261a;
+  --light-warning: #8a5100;
+  --dark-warning: #f2c14e;
+  --light-warning-soft: #fdf3dc;
+  --dark-warning-soft: #2c230f;
+  --light-danger: #b42318;
+  --dark-danger: #ff8a80;
+  --light-danger-soft: #fdecea;
+  --dark-danger-soft: #2d1514;
+  --light-grid: #eceae6;
+  --dark-grid: #262626;
+
+  /* Chart status fills (dataviz reference status palette; fixed in both modes). */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
 
   --canvas: var(--light-canvas);
   --surface: var(--light-surface);
@@ -50,15 +61,16 @@
   --line-strong: var(--light-line-strong);
   --fg: var(--light-fg);
   --muted: var(--light-muted);
+  --ink: var(--light-ink);
+  --on-ink: var(--light-on-ink);
   --accent: var(--light-accent);
-  --on-accent: var(--light-on-accent);
-  --accent-soft: var(--light-accent-soft);
   --success: var(--light-success);
   --success-soft: var(--light-success-soft);
   --warning: var(--light-warning);
   --warning-soft: var(--light-warning-soft);
   --danger: var(--light-danger);
   --danger-soft: var(--light-danger-soft);
+  --grid: var(--light-grid);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -70,15 +82,16 @@
     --line-strong: var(--dark-line-strong);
     --fg: var(--dark-fg);
     --muted: var(--dark-muted);
+    --ink: var(--dark-ink);
+    --on-ink: var(--dark-on-ink);
     --accent: var(--dark-accent);
-    --on-accent: var(--dark-on-accent);
-    --accent-soft: var(--dark-accent-soft);
     --success: var(--dark-success);
     --success-soft: var(--dark-success-soft);
     --warning: var(--dark-warning);
     --warning-soft: var(--dark-warning-soft);
     --danger: var(--dark-danger);
     --danger-soft: var(--dark-danger-soft);
+    --grid: var(--dark-grid);
   }
 }
 
@@ -91,15 +104,16 @@
     --line-strong: light-dark(var(--light-line-strong), var(--dark-line-strong));
     --fg: light-dark(var(--light-fg), var(--dark-fg));
     --muted: light-dark(var(--light-muted), var(--dark-muted));
+    --ink: light-dark(var(--light-ink), var(--dark-ink));
+    --on-ink: light-dark(var(--light-on-ink), var(--dark-on-ink));
     --accent: light-dark(var(--light-accent), var(--dark-accent));
-    --on-accent: light-dark(var(--light-on-accent), var(--dark-on-accent));
-    --accent-soft: light-dark(var(--light-accent-soft), var(--dark-accent-soft));
     --success: light-dark(var(--light-success), var(--dark-success));
     --success-soft: light-dark(var(--light-success-soft), var(--dark-success-soft));
     --warning: light-dark(var(--light-warning), var(--dark-warning));
     --warning-soft: light-dark(var(--light-warning-soft), var(--dark-warning-soft));
     --danger: light-dark(var(--light-danger), var(--dark-danger));
     --danger-soft: light-dark(var(--light-danger-soft), var(--dark-danger-soft));
+    --grid: light-dark(var(--light-grid), var(--dark-grid));
   }
 }
 
@@ -126,22 +140,22 @@
   --color-line-strong: var(--line-strong);
   --color-fg: var(--fg);
   --color-muted: var(--muted);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
   --color-accent: var(--accent);
-  --color-on-accent: var(--on-accent);
-  --color-accent-soft: var(--accent-soft);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
 }
 
 @layer base {
   html {
-    accent-color: var(--accent);
+    accent-color: var(--ink);
     scrollbar-color: var(--line-strong) transparent;
   }
 
@@ -149,26 +163,30 @@
     background: var(--canvas);
     color: var(--fg);
     font-family: var(--font-sans);
+    font-size: 0.875rem;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
   :focus-visible {
-    outline: 3px solid var(--accent);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
 
-  /* Form controls: readable size (no iOS zoom), 48px touch target, 3:1 borders. */
+  /* Form controls: no iOS zoom (16px), 44px touch target, 3:1 borders. */
   :where(input:not([type='radio'], [type='checkbox']), select, textarea) {
     font: inherit;
     font-size: max(1rem, 1em);
-    min-block-size: 48px;
+    min-block-size: 44px;
     inline-size: 100%;
-    padding: 0.625rem 0.875rem;
+    padding: 0.5rem 0.75rem;
     border: 1px solid var(--line-strong);
-    border-radius: 0.625rem;
+    border-radius: 0.5rem;
     background: var(--surface);
     color: var(--fg);
+  }
+  :where(input, select, textarea):hover {
+    border-color: var(--fg);
   }
 
   :where(input, select, textarea)[aria-invalid='true'] {
@@ -184,45 +202,53 @@
     color: var(--muted);
     opacity: 1;
   }
+
+  code,
+  kbd,
+  .font-mono {
+    font-family: var(--font-mono);
+    font-feature-settings: 'zero' 0;
+  }
 }
 
 @layer components {
   .card {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: 0.75rem;
   }
 
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    min-block-size: 44px;
-    padding: 0.5rem 1rem;
-    border-radius: 0.625rem;
-    border: 1px solid var(--line-strong);
+    gap: 0.375rem;
+    min-block-size: 36px;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--line);
     background: var(--surface);
     color: var(--fg);
-    font-weight: 600;
-    font-size: 0.9375rem;
+    font-weight: 500;
+    font-size: 0.875rem;
     white-space: nowrap;
     cursor: pointer;
+    box-shadow: 0 1px 1px color-mix(in oklab, black, transparent 94%);
   }
   .btn:hover {
     background: var(--surface-2);
   }
   .btn:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.55;
   }
   .btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--on-ink);
   }
   .btn-primary:hover {
-    background: color-mix(in oklab, var(--accent), black 12%);
+    background: color-mix(in oklab, var(--ink), var(--canvas) 18%);
   }
   .btn-danger {
     background: var(--danger);
@@ -232,16 +258,30 @@
   .btn-ghost {
     border-color: transparent;
     background: transparent;
+    box-shadow: none;
   }
   .btn-sm {
-    min-block-size: 36px;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.875rem;
+    min-block-size: 32px;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+  /* Square icon button; the visible name comes from sr-only text inside. */
+  .btn-icon {
+    inline-size: 32px;
+    min-block-size: 32px;
+    padding: 0;
   }
 
   .field-error {
     color: var(--danger);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Small all-caps section label, as in the reference sheet. */
+  .eyebrow {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 500;
   }
 
   /* Modal dialogs: keep scrolling inside the dialog from moving the page behind it. */
@@ -251,7 +291,7 @@
   dialog::backdrop {
     overflow: hidden;
     overscroll-behavior: contain;
-    background: color-mix(in oklab, black, transparent 45%);
+    background: color-mix(in oklab, black, transparent 50%);
   }
 
   /*
@@ -267,7 +307,6 @@
     inline-size: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    font-size: 0.9375rem;
   }
   .data-table thead {
     position: sticky;
@@ -276,21 +315,26 @@
   }
   .data-table th,
   .data-table td {
-    padding: 0.75rem 1rem;
+    padding: 0.625rem 1rem;
     text-align: start;
     vertical-align: middle;
     border-block-end: 1px solid var(--line);
   }
+  .data-table tbody tr:last-child > * {
+    border-block-end: 0;
+  }
   .data-table thead th {
-    background: var(--surface-2);
+    background: var(--surface);
     color: var(--muted);
     font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .data-table tbody tr:hover > * {
+    background: color-mix(in oklab, var(--surface-2), transparent 40%);
   }
   .data-table tbody th {
-    font-weight: 600;
+    font-weight: 500;
   }
   /* The stacked layout sets display on rows, which would otherwise override the hidden attribute. */
   .data-table [hidden] {
@@ -319,22 +363,39 @@
     .data-table tbody td[data-label]::before {
       content: attr(data-label) ': ';
       color: var(--muted);
-      font-size: 0.8125rem;
-      font-weight: 600;
+      font-size: 0.75rem;
     }
   }
 
-  /* Status badges always carry text and an icon; the border keeps them visible in forced colors. */
+  /* Badges always carry text (and usually an icon); the border keeps them visible in forced colors. */
   .badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.125rem 0.625rem;
-    border-radius: 999px;
+    gap: 0.3125rem;
+    padding: 0.0625rem 0.4375rem;
+    border-radius: 0.375rem;
     border: 1px solid transparent;
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.25rem;
     white-space: nowrap;
+  }
+  .badge-success {
+    background: var(--success-soft);
+    color: var(--success);
+  }
+  .badge-warning {
+    background: var(--warning-soft);
+    color: var(--warning);
+  }
+  .badge-danger {
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+  .badge-neutral {
+    background: var(--surface-2);
+    color: var(--muted);
+    border-color: var(--line);
   }
   @media (forced-colors: active) {
     .badge {
@@ -349,11 +410,11 @@
     margin: 0;
     max-inline-size: min(24rem, calc(100dvw - 2rem));
     padding: 0.75rem 1rem;
-    border: 1px solid var(--line-strong);
-    border-radius: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 0.625rem;
     background: var(--surface);
     color: var(--fg);
-    box-shadow: 0 10px 30px color-mix(in oklab, black, transparent 80%);
+    box-shadow: 0 12px 32px color-mix(in oklab, black, transparent 82%);
   }
 }
 

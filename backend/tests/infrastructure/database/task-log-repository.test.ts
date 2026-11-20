@@ -78,6 +78,20 @@ describe('DrizzleTaskLogRepository', () => {
     });
   });
 
+  it('counts attempts per hour and status', async () => {
+    const task = await tasks.create({ ...taskInput(), status: 'active' });
+    await log(task.id, 'success');
+    await log(task.id, 'success');
+    await log(task.id, 'failed');
+
+    const rows = await logs.countByHourSince(new Date(Date.now() - 3_600_000));
+    const currentHour = Math.floor(Date.now() / 3_600_000) * 3_600_000;
+
+    expect(rows).toHaveLength(2);
+    for (const row of rows) expect(row.hour.getTime()).toBe(currentHour);
+    expect(Object.fromEntries(rows.map((r) => [r.status, r.count]))).toEqual({ success: 2, failed: 1 });
+  });
+
   it('loses the logs of a deleted task (cascade)', async () => {
     const task = await tasks.create({ ...taskInput(), status: 'active' });
     await log(task.id, 'success');

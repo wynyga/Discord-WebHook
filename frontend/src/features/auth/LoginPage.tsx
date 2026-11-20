@@ -57,11 +57,11 @@ export function LoginPage() {
     <main className="grid min-h-dvh place-items-center bg-canvas p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-xl bg-accent text-on-accent">
-            <Icon name="clock" className="size-6" />
+          <span className="grid size-10 place-items-center rounded-lg bg-ink text-on-ink">
+            <Icon name="webhook" className="size-5" />
           </span>
           <div>
-            <p className="text-lg font-bold">Task Scheduler</p>
+            <p className="text-base font-semibold tracking-tight">Scheduler</p>
             <p className="text-sm text-muted">Discord webhooks on a schedule</p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
+const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 const relative = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 
 const UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [

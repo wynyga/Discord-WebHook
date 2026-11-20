@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { routes } from '../../app/routes';
 import { session } from '../../auth/session';
-import { page, task } from '../../test/fixtures';
+import { page, task, taskDetail } from '../../test/fixtures';
 import { json, mockApi, renderRoutes, signIn } from '../../test/utils';
 
 const WEBHOOK = 'https://discord.com/api/webhooks/123456789012345678/abc_DEF-123';
@@ -92,42 +92,24 @@ describe('Tasks page', () => {
     expect(calls.some((c) => c.path.endsWith('/pause'))).toBe(true);
   });
 
-  it('deletes only after confirming in the dialog', async () => {
-    const user = userEvent.setup();
-    const { calls } = mockApi({
-      'GET /tasks': () => json(200, page([task()])),
-      [`DELETE /tasks/${task().id}`]: () => new Response(null, { status: 204 }),
-    });
+  it('offers Resume instead of Pause on a paused task, and links each task to its page', async () => {
+    mockApi({ 'GET /tasks': () => json(200, page([task({ status: 'paused', nextRunAt: null })])) });
     renderRoutes(routes, '/tasks');
 
-    await user.click(await screen.findByRole('button', { name: 'Delete Daily report' }));
-    const dialog = screen.getByRole('dialog', { name: 'Delete "Daily report"?' });
-    expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
-
-    await user.click(within(dialog).getByRole('button', { name: 'Delete task' }));
-
-    await waitFor(async () => expect(await notifications()).toHaveTextContent('Task "Daily report" deleted.'));
-    expect(calls.some((c) => c.method === 'DELETE')).toBe(true);
-  });
-
-  it('does not delete when cancelled', async () => {
-    const user = userEvent.setup();
-    const { calls } = mockApi({ 'GET /tasks': () => json(200, page([task()])) });
-    renderRoutes(routes, '/tasks');
-
-    await user.click(await screen.findByRole('button', { name: 'Delete Daily report' }));
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
+    expect(await screen.findByRole('button', { name: 'Resume Daily report' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Pause Daily report' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Daily report' })).toHaveAttribute('href', `/tasks/${task().id}`);
+    expect(screen.getByRole('row', { name: /Daily report/ })).toHaveTextContent(/Next run.*Paused|Paused/);
   });
 });
 
 describe('Task form', () => {
-  it('creates a task from a preset and goes back to the list', async () => {
+  it('creates a task from a preset and opens it', async () => {
     const user = userEvent.setup();
     const { calls } = mockApi({
-      'POST /tasks': ({ body }) => json(201, { data: task({ ...(body as object), id: 'new' }) }),
-      'GET /tasks': () => json(200, page([task()])),
+      'POST /tasks': ({ body }) => json(201, { data: task({ ...(body as object), id: 'c1' }) }),
+      'GET /tasks/c1': () => json(200, { data: taskDetail({ id: 'c1', name: 'Standup reminder' }) }),
+      'GET /logs': () => json(200, page([])),
     });
     const { router } = renderRoutes(routes, '/tasks/new');
 
@@ -139,7 +121,7 @@ describe('Task form', () => {
     expect(screen.getByText(/At 09:00, Monday through Friday \(Asia\/Jakarta\)/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Create task' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/tasks'));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/tasks/c1'));
     const body = calls.find((c) => c.method === 'POST')?.body;
     expect(body).toMatchObject({
       name: 'Standup reminder',
@@ -236,11 +218,11 @@ describe('Task form', () => {
 
   it('edits a task and keeps the stored webhook when left empty', async () => {
     const user = userEvent.setup();
-    const existing = task({ cronSchedule: '15 3 * * *' });
+    const existing = taskDetail({ cronSchedule: '15 3 * * *' });
     const { calls } = mockApi({
       [`GET /tasks/${existing.id}`]: () => json(200, { data: existing }),
       [`PATCH /tasks/${existing.id}`]: ({ body }) => json(200, { data: { ...existing, ...(body as object) } }),
-      'GET /tasks': () => json(200, page([existing])),
+      'GET /logs': () => json(200, page([])),
     });
     renderRoutes(routes, `/tasks/${existing.id}/edit`);
 

@@ -65,8 +65,9 @@ Sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` (default `admin` / `admin`). Se
 
 | Page | What it does |
 |---|---|
-| Dashboard | Task counts by status, delivery results of the last 24 h, five most recent runs |
-| Tasks | List with status badges; filter by status; run now, pause/resume, edit, delete (with confirmation) |
+| Overview | Delivery figures of the last 24 h with trends, hourly activity chart (with a table view), task counts by status, recent runs |
+| Tasks | List with status, next and last run; filter by status; run now and pause/resume per row |
+| Task | Schedule split into fields, details, next 5 runs, payload, last failure; Runs tab; edit and delete (with confirmation) |
 | New / edit task | Schedule presets or custom cron with a readable preview, timezone, webhook, JSON payload, retries |
 | Logs | Every attempt with status, retry number, HTTP code and duration; filter by task and status |
 
@@ -145,7 +146,7 @@ from `/auth/login` with `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 | GET | `/health` | Readiness of the API and its dependencies |
 | POST | `/tasks` | Create a task |
 | GET | `/tasks?status=&page=&pageSize=` | List tasks, newest first |
-| GET | `/tasks/:id` | Task detail |
+| GET | `/tasks/:id` | Task detail, including its next five run times |
 | PATCH | `/tasks/:id` | Update a task; omit `webhookUrl` to keep the stored one |
 | DELETE | `/tasks/:id` | Delete a task, its schedule and its logs |
 | POST | `/tasks/:id/pause` | Pause the schedule |
@@ -153,7 +154,7 @@ from `/auth/login` with `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 | POST | `/tasks/:id/run` | Queue one run now (202); works on paused tasks too |
 | GET | `/tasks/:id/logs?status=&page=&pageSize=` | Execution logs of one task |
 | GET | `/logs?taskId=&status=&page=&pageSize=` | All execution logs, newest first |
-| GET | `/dashboard/summary` | Task counts by status; executions of the last 24 h by outcome |
+| GET | `/dashboard/summary` | Task counts by status; executions of the last 24 h by outcome, also per hour |
 
 Webhook URLs are masked in responses (`.../webhooks/<id>/****abcd`). Errors use one shape:
 
@@ -215,6 +216,7 @@ UI inspiration from Dribbble, listed in [PLAN.md](PLAN.md#design-references-drib
 | @tanstack/react-query | Server state, caching and background refresh |
 | tailwindcss, @tailwindcss/vite | Styling |
 | cronstrue | Cron expressions in plain words |
+| @fontsource-variable/geist, geist-mono | Self-hosted UI and monospace fonts |
 | @oddbird/popover-polyfill | Popover API, loaded only in browsers that lack it |
 | vite, @vitejs/plugin-react | Dev server and build |
 | @testing-library/react, user-event, jest-dom, jsdom | Frontend tests |

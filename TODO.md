@@ -69,7 +69,10 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 - [x] Logs page (GraphCMS Webhook Logs reference)
 - [x] Responsive layout: sidebar or top nav, tables stack into cards below 600px (container query)
 - [x] Frontend tests (89 tests, 94.7% lines): form validation, API errors, auth and 401, dialogs, toasts
-- [ ] Visual check in a browser (light, dark, narrow) — needs your go-ahead
+- [x] Visual check in a browser (light, dark, phone) with headless Chromium
+- [x] Redesign from Dribbble shots actually viewed: Overview (Prakash), task page (Faizal)
+- [x] Hourly activity chart (dataviz rules, table twin, keyboard reading) and per-figure sparklines
+- [x] Task detail page with Overview / Runs; backend adds `nextRunAt`, `nextRuns`, `activity24h`
 
 ## Phase 7: Docker
 - [ ] Backend Dockerfile (multi-stage)

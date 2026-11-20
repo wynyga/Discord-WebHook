@@ -105,10 +105,13 @@ describe('GET /dashboard/summary', () => {
     const res = await get('/dashboard/summary');
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual({
+    expect(res.body.data).toMatchObject({
       tasks: { total: 2, active: 1, paused: 0, failed: 1 },
       executions24h: { total: 3, success: 1, retrying: 1, failed: 1 },
     });
+    expect(res.body.data.activity24h).toHaveLength(24);
+    expect(res.body.data.activity24h.at(-1)).toMatchObject({ success: 1, retrying: 1, failed: 1 });
+    expect(res.body.data.activity24h[0].hour).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:00:00\.000Z$/);
   });
 
   it('needs a token', async () => {

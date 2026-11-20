@@ -4,6 +4,7 @@ import {
   assertRetryWindowFits,
   isValidCron,
   isValidTimezone,
+  nextRuns,
   shortestIntervalMs,
 } from '../../src/domain/schedule.js';
 
@@ -33,6 +34,19 @@ describe('isValidTimezone', () => {
 
   it.each(['Mars/Olympus', 'GMT+99', ''])('rejects %j', (tz) => {
     expect(isValidTimezone(tz)).toBe(false);
+  });
+});
+
+describe('nextRuns', () => {
+  it('lists upcoming runs in the task timezone', () => {
+    // 09:00 in Jakarta (UTC+7) is 02:00 UTC; FROM is a Sunday, so weekdays start on Monday.
+    const runs = nextRuns('0 9 * * 1-5', 'Asia/Jakarta', 3, FROM);
+
+    expect(runs.map((d) => d.toISOString())).toEqual([
+      '2026-03-02T02:00:00.000Z',
+      '2026-03-03T02:00:00.000Z',
+      '2026-03-04T02:00:00.000Z',
+    ]);
   });
 });
 

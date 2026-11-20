@@ -64,9 +64,25 @@ describe('GetDashboardSummary', () => {
 
     const summary = await new GetDashboardSummary(tasks, logs, () => NOW).execute();
 
-    expect(summary).toEqual({
-      tasks: { total: 4, active: 2, paused: 1, failed: 1 },
-      executions24h: { total: 3, success: 1, retrying: 1, failed: 1 },
-    });
+    expect(summary.tasks).toEqual({ total: 4, active: 2, paused: 1, failed: 1 });
+    expect(summary.executions24h).toEqual({ total: 3, success: 1, retrying: 1, failed: 1 });
+  });
+
+  it('splits the last 24 hours per hour, oldest first, with empty hours as zeros', async () => {
+    const task = await tasks.create({ ...taskInput(), status: 'active' });
+    await addLog(task.id, 'success', 1); // 11:00 bucket
+    await addLog(task.id, 'failed', 1); // 11:00 bucket
+    await addLog(task.id, 'retrying', 2); // 10:00 bucket
+    await addLog(task.id, 'failed', 23); // first bucket
+    await addLog(task.id, 'success', 30); // too old
+
+    const { activity24h } = await new GetDashboardSummary(tasks, logs, () => NOW).execute();
+
+    expect(activity24h).toHaveLength(24);
+    expect(activity24h[0]).toEqual({ hour: new Date('2026-04-30T13:00:00Z'), success: 0, retrying: 0, failed: 1 });
+    expect(activity24h[21]).toMatchObject({ hour: new Date('2026-05-01T10:00:00Z'), retrying: 1 });
+    expect(activity24h[22]).toMatchObject({ hour: new Date('2026-05-01T11:00:00Z'), success: 1, failed: 1 });
+    expect(activity24h[23]).toEqual({ hour: new Date('2026-05-01T12:00:00Z'), success: 0, retrying: 0, failed: 0 });
+    expect(activity24h.reduce((n, h) => n + h.success + h.retrying + h.failed, 0)).toBe(4);
   });
 });

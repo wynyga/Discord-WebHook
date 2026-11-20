@@ -1,7 +1,22 @@
-import type { Paged, Task, TaskLog } from '../api/types';
+import type { DashboardSummary, Paged, Task, TaskDetail, TaskLog } from '../api/types';
+
+export function taskDetail(overrides: Partial<TaskDetail> = {}): TaskDetail {
+  return {
+    ...task(overrides),
+    nextRuns: [
+      '2026-11-23T02:00:00.000Z',
+      '2026-11-24T02:00:00.000Z',
+      '2026-11-25T02:00:00.000Z',
+      '2026-11-26T02:00:00.000Z',
+      '2026-11-27T02:00:00.000Z',
+    ],
+    ...overrides,
+  };
+}
 
 export function task(overrides: Partial<Task> = {}): Task {
   return {
+    nextRunAt: '2026-11-23T02:00:00.000Z',
     id: '3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e',
     name: 'Daily report',
     cronSchedule: '0 9 * * 1-5',
@@ -32,6 +47,20 @@ export function log(overrides: Partial<TaskLog> = {}): TaskLog {
     createdAt: '2026-11-20T09:00:00.000Z',
     ...overrides,
   };
+}
+
+/** A dashboard summary with 24 hourly buckets; the last hour holds the given counts. */
+export function summary(
+  tasks: DashboardSummary['tasks'] = { total: 0, active: 0, paused: 0, failed: 0 },
+  lastHour: { success: number; retrying: number; failed: number } = { success: 0, retrying: 0, failed: 0 },
+): DashboardSummary {
+  const start = Date.parse('2026-11-20T00:00:00.000Z');
+  const activity24h = Array.from({ length: 24 }, (_, i) => ({
+    hour: new Date(start + i * 3_600_000).toISOString(),
+    ...(i === 23 ? lastHour : { success: 0, retrying: 0, failed: 0 }),
+  }));
+  const total = lastHour.success + lastHour.retrying + lastHour.failed;
+  return { tasks, executions24h: { ...lastHour, total }, activity24h };
 }
 
 export function page<T>(items: T[], meta: Partial<Paged<T>['meta']> = {}): Paged<T> {

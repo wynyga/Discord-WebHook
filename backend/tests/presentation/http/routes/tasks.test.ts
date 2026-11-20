@@ -115,13 +115,28 @@ describe('GET /tasks', () => {
 });
 
 describe('GET /tasks/:id', () => {
-  it('returns one task', async () => {
+  it('returns one task with its next five runs', async () => {
     const { id } = await createTask();
 
     const res = await api().get(`/tasks/${id}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.id).toBe(id);
+    expect(res.body.data.nextRuns).toHaveLength(5);
+    expect(res.body.data.nextRunAt).toBe(res.body.data.nextRuns[0]);
+    // */5 * * * * runs every five minutes
+    const [first, second] = res.body.data.nextRuns.map((iso: string) => Date.parse(iso));
+    expect(second - first).toBe(5 * 60_000);
+  });
+
+  it('has no upcoming runs while paused', async () => {
+    const { id } = await createTask();
+    await api().post(`/tasks/${id}/pause`);
+
+    const res = await api().get(`/tasks/${id}`);
+
+    expect(res.body.data.nextRunAt).toBeNull();
+    expect(res.body.data.nextRuns).toEqual([]);
   });
 
   it('returns 404 for an unknown id', async () => {

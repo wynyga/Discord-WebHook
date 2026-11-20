@@ -36,8 +36,15 @@ export interface Task {
   retryDelayMs: number;
   status: TaskStatus;
   lastRunAt: string | null;
+  /** Null while paused. */
+  nextRunAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** `GET /tasks/:id` also lists the next five runs (empty while paused). */
+export interface TaskDetail extends Task {
+  nextRuns: string[];
 }
 
 export interface TaskInput {
@@ -77,9 +84,16 @@ export interface Paged<T> {
   meta: PageMeta;
 }
 
+export interface HourlyActivity extends Record<TaskLogStatus, number> {
+  /** Start of the hour, ISO (UTC). */
+  hour: string;
+}
+
 export interface DashboardSummary {
   tasks: Record<TaskStatus, number> & { total: number };
   executions24h: Record<TaskLogStatus, number> & { total: number };
+  /** 24 hourly buckets, oldest first. */
+  activity24h: HourlyActivity[];
 }
 
 export interface LoginResult {

@@ -50,7 +50,7 @@ export function LogsPage() {
     <>
       <PageHeader title="Execution logs" description="Every delivery attempt, newest first. Refreshes every 10 seconds." />
 
-      <search className="mb-4 flex flex-wrap items-end gap-4">
+      <search className="mb-3 flex flex-wrap items-center gap-3">
         <SegmentedFilter
           legend="Filter logs by status"
           name="log-status"
@@ -58,11 +58,16 @@ export function LogsPage() {
           options={FILTERS}
           onChange={(value) => setQuery({ status: value })}
         />
-        <div className="flex min-w-60 flex-col gap-1.5">
-          <label htmlFor={taskSelectId} className="text-sm font-semibold">
+        <div className="flex items-center gap-2">
+          <label htmlFor={taskSelectId} className="text-[0.8125rem] text-muted">
             Task
           </label>
-          <select id={taskSelectId} value={taskId} onChange={(e) => setQuery({ taskId: e.target.value })}>
+          <select
+            id={taskSelectId}
+            className="min-h-9! w-56! py-1!"
+            value={taskId}
+            onChange={(e) => setQuery({ taskId: e.target.value })}
+          >
             <option value="">All tasks</option>
             {tasks.data?.data.map((task) => (
               <option key={task.id} value={task.id}>

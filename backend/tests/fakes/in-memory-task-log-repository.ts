@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Page } from '../../src/domain/pagination.js';
 import { TASK_LOG_STATUSES, type TaskLog, type TaskLogStatus } from '../../src/domain/task.js';
 import type {
+  HourlyCount,
   NewTaskLog,
   TaskLogEntry,
   TaskLogListQuery,
@@ -29,6 +30,19 @@ export class InMemoryTaskLogRepository implements TaskLogRepository {
       .slice((page - 1) * pageSize, page * pageSize)
       .map((log) => ({ ...log, taskName: this.tasks?.rows.get(log.taskId)?.name ?? 'unknown' }));
     return { items, total: matching.length, page, pageSize };
+  }
+
+  async countByHourSince(since: Date): Promise<HourlyCount[]> {
+    const counts = new Map<string, HourlyCount>();
+    for (const log of this.rows) {
+      if (log.createdAt < since) continue;
+      const hour = new Date(Math.floor(log.createdAt.getTime() / 3_600_000) * 3_600_000);
+      const key = `${hour.toISOString()}|${log.status}`;
+      const entry = counts.get(key) ?? { hour, status: log.status, count: 0 };
+      entry.count += 1;
+      counts.set(key, entry);
+    }
+    return [...counts.values()];
   }
 
   async countByStatusSince(since: Date): Promise<Record<TaskLogStatus, number>> {

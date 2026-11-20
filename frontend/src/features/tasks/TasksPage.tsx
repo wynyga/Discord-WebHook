@@ -1,7 +1,5 @@
-import { useCallback, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import type { Task, TaskStatus } from '../../api/types';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
+import type { TaskStatus } from '../../api/types';
 import { Icon } from '../../components/Icon';
 import {
   EmptyState,
@@ -13,10 +11,10 @@ import {
   TableRegion,
 } from '../../components/Layout';
 import { StatusBadge } from '../../components/StatusBadge';
-import { useToast } from '../../components/Toasts';
 import { describeCron } from '../../lib/cron';
 import { formatDateTime, formatRelative } from '../../lib/format';
-import { useTaskActions, useTasks } from './queries';
+import { useTasks } from './queries';
+import { TaskQuickActions } from './TaskActions';
 
 type Filter = 'all' | TaskStatus;
 const FILTERS: Array<{ value: Filter; label: string }> = [
@@ -27,6 +25,15 @@ const FILTERS: Array<{ value: Filter; label: string }> = [
 ];
 const PAGE_SIZE = 10;
 
+function When({ iso, empty }: { iso: string | null; empty: string }) {
+  if (!iso) return <span className="text-muted">{empty}</span>;
+  return (
+    <time dateTime={iso} title={formatDateTime(iso)}>
+      {formatRelative(iso)}
+    </time>
+  );
+}
+
 export function TasksPage() {
   const [params, setParams] = useSearchParams();
   const filter = (FILTERS.find((f) => f.value === params.get('status'))?.value ?? 'all') as Filter;
@@ -36,9 +43,6 @@ export function TasksPage() {
     page,
     pageSize: PAGE_SIZE,
   });
-  const [pendingDelete, setPendingDelete] = useState<Task | null>(null);
-  const actions = useTaskActions();
-  const { notify } = useToast();
 
   const setQuery = (next: { status?: Filter; page?: number }) => {
     const status = next.status ?? filter;
@@ -51,36 +55,11 @@ export function TasksPage() {
     });
   };
 
-  const confirmDelete = useCallback(() => {
-    const task = pendingDelete;
-    if (!task) return;
-    actions.remove.mutate(task.id, {
-      onSuccess: () => notify(`Task "${task.name}" deleted.`, 'success'),
-      onError: (err) => notify(`Could not delete "${task.name}": ${err.message}`, 'error'),
-    });
-  }, [pendingDelete, actions.remove, notify]);
-  const closeDelete = useCallback(() => setPendingDelete(null), []);
-
-  const run = (task: Task) =>
-    actions.runNow.mutate(task.id, {
-      onSuccess: () => notify(`Run of "${task.name}" queued. The result appears in its logs.`, 'info'),
-      onError: (err) => notify(`Could not run "${task.name}": ${err.message}`, 'error'),
-    });
-
-  const togglePause = (task: Task) => {
-    const pausing = task.status !== 'paused';
-    const mutation = pausing ? actions.pause : actions.resume;
-    mutation.mutate(task.id, {
-      onSuccess: () => notify(`Task "${task.name}" ${pausing ? 'paused' : 'resumed'}.`, 'success'),
-      onError: (err) => notify(`Could not update "${task.name}": ${err.message}`, 'error'),
-    });
-  };
-
   return (
     <>
       <PageHeader
         title="Tasks"
-        description="Scheduled messages and their current state."
+        description="Scheduled Discord messages. Open a task for its schedule, details and runs."
         actions={
           <Link to="/tasks/new" className="btn btn-primary">
             <Icon name="plus" /> New task
@@ -88,7 +67,7 @@ export function TasksPage() {
         }
       />
 
-      <search className="mb-4">
+      <search className="mb-3">
         <SegmentedFilter
           legend="Filter tasks by status"
           name="status"
@@ -106,7 +85,7 @@ export function TasksPage() {
         ) : data.data.length === 0 ? (
           <EmptyState title={filter === 'all' ? 'No tasks yet' : `No ${filter} tasks`}>
             {filter === 'all' && (
-              <Link to="/tasks/new" className="text-accent underline">
+              <Link to="/tasks/new" className="text-fg underline">
                 Create your first task
               </Link>
             )}
@@ -120,9 +99,9 @@ export function TasksPage() {
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Schedule</th>
+                    <th scope="col">Task</th>
                     <th scope="col">Status</th>
+                    <th scope="col">Next run</th>
                     <th scope="col">Last run</th>
                     <th scope="col">
                       <span className="sr-only">Actions</span>
@@ -132,49 +111,29 @@ export function TasksPage() {
                 <tbody>
                   {data.data.map((task) => (
                     <tr key={task.id}>
-                      <th scope="row">
-                        <Link to={`/logs?taskId=${task.id}`} className="hover:underline">
+                      <th scope="row" className="min-w-56">
+                        <Link to={`/tasks/${task.id}`} className="hover:underline">
                           {task.name}
                         </Link>
-                      </th>
-                      <td data-label="Schedule">
-                        <code className="font-mono text-sm">{task.cronSchedule}</code>
-                        <p className="text-sm text-muted">
-                          {describeCron(task.cronSchedule) ?? 'Custom'} · {task.timezone}
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.8125rem] font-normal text-muted">
+                          <code className="text-fg">{task.cronSchedule}</code>
+                          <span>
+                            {describeCron(task.cronSchedule) ?? 'Custom'} · {task.timezone}
+                          </span>
                         </p>
-                      </td>
+                      </th>
                       <td data-label="Status">
                         <StatusBadge status={task.status} />
                       </td>
-                      <td data-label="Last run">
-                        {task.lastRunAt ? (
-                          <time dateTime={task.lastRunAt} title={formatDateTime(task.lastRunAt)}>
-                            {formatRelative(task.lastRunAt)}
-                          </time>
-                        ) : (
-                          <span className="text-muted">Never</span>
-                        )}
+                      <td data-label="Next run" className="whitespace-nowrap">
+                        <When iso={task.nextRunAt} empty="Paused" />
+                      </td>
+                      <td data-label="Last run" className="whitespace-nowrap">
+                        <When iso={task.lastRunAt} empty="Never" />
                       </td>
                       <td>
-                        <div className="flex flex-wrap justify-end gap-1">
-                          <button type="button" className="btn btn-ghost btn-sm" onClick={() => run(task)}>
-                            {/* Spaces sit outside the hidden spans: some name computations trim them. */}
-                            <Icon name="play" /> Run <span className="sr-only">{task.name} now</span>
-                          </button>
-                          <button type="button" className="btn btn-ghost btn-sm" onClick={() => togglePause(task)}>
-                            <Icon name={task.status === 'paused' ? 'play' : 'pause'} />
-                            {task.status === 'paused' ? 'Resume' : 'Pause'} <span className="sr-only">{task.name}</span>
-                          </button>
-                          <Link to={`/tasks/${task.id}/edit`} className="btn btn-ghost btn-sm">
-                            <Icon name="edit" /> Edit <span className="sr-only">{task.name}</span>
-                          </Link>
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm text-danger"
-                            onClick={() => setPendingDelete(task)}
-                          >
-                            <Icon name="trash" /> Delete <span className="sr-only">{task.name}</span>
-                          </button>
+                        <div className="flex justify-end gap-1">
+                          <TaskQuickActions task={task} compact />
                         </div>
                       </td>
                     </tr>
@@ -191,15 +150,6 @@ export function TasksPage() {
           </>
         )}
       </div>
-
-      <ConfirmDialog
-        open={pendingDelete !== null}
-        title={`Delete "${pendingDelete?.name ?? ''}"?`}
-        description="Its schedule stops and all of its execution logs are deleted. This cannot be undone."
-        confirmLabel="Delete task"
-        onConfirm={confirmDelete}
-        onClose={closeDelete}
-      />
     </>
   );
 }

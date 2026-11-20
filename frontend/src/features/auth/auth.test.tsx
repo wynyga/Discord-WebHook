@@ -3,17 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { routes } from '../../app/routes';
 import { session } from '../../auth/session';
-import { page } from '../../test/fixtures';
+import { page, summary } from '../../test/fixtures';
 import { json, mockApi, renderRoutes, signIn } from '../../test/utils';
 
 const dashboardApis = {
-  'GET /dashboard/summary': () =>
-    json(200, {
-      data: {
-        tasks: { total: 0, active: 0, paused: 0, failed: 0 },
-        executions24h: { total: 0, success: 0, retrying: 0, failed: 0 },
-      },
-    }),
+  'GET /dashboard/summary': () => json(200, { data: summary() }),
   'GET /logs': () => json(200, page([])),
 };
 
@@ -39,7 +33,7 @@ describe('authentication flow', () => {
     await user.type(screen.getByLabelText(/password/i), 'secret');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/');
     expect(calls[0]?.body).toEqual({ username: 'admin', password: 'secret' });
     expect(session.get()?.token).toBe('jwt');

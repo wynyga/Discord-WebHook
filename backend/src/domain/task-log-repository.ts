@@ -18,4 +18,12 @@ export interface TaskLogRepository {
   /** Newest first. */
   list(query: TaskLogListQuery): Promise<Page<TaskLogEntry>>;
   countByStatusSince(since: Date): Promise<Record<TaskLogStatus, number>>;
+  /** Attempts per started hour (UTC) and status since `since`; hours without attempts are absent. */
+  countByHourSince(since: Date): Promise<HourlyCount[]>;
+}
+
+export interface HourlyCount {
+  hour: Date;
+  status: TaskLogStatus;
+  count: number;
 }

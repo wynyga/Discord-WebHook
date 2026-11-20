@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { TaskUseCases } from '../../../application/tasks/index.js';
-import { toPageResponse, toTaskResponse } from '../presenters/task.presenter.js';
+import { toPageResponse, toTaskDetailResponse, toTaskResponse } from '../presenters/task.presenter.js';
 import { createTaskSchema, listTasksQuerySchema, taskIdParamsSchema, updateTaskSchema } from '../schemas/task.schema.js';
 import { parseInput } from '../validation.js';
 
@@ -16,12 +16,12 @@ export function createTasksRouter(tasks: TaskUseCases): Router {
   router.get('/tasks', async (req, res) => {
     const query = parseInput(listTasksQuerySchema, req.query);
     const page = await tasks.list.execute(query);
-    res.json(toPageResponse(page, toTaskResponse));
+    res.json(toPageResponse(page, (task) => toTaskResponse(task)));
   });
 
   router.get('/tasks/:id', async (req, res) => {
     const { id } = parseInput(taskIdParamsSchema, req.params);
-    res.json({ data: toTaskResponse(await tasks.get.execute(id)) });
+    res.json({ data: toTaskDetailResponse(await tasks.get.execute(id)) });
   });
 
   router.patch('/tasks/:id', async (req, res) => {

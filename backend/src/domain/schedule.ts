@@ -25,6 +25,12 @@ export function isValidTimezone(timezone: string): boolean {
   }
 }
 
+/** The next `count` run times of a schedule, after `from`. */
+export function nextRuns(cronSchedule: string, timezone: string, count: number, from = new Date()): Date[] {
+  const expression = CronExpressionParser.parse(cronSchedule, { tz: timezone, currentDate: from });
+  return Array.from({ length: count }, () => new Date(expression.next().getTime()));
+}
+
 export function shortestIntervalMs(cronSchedule: string, timezone: string, from = new Date()): number {
   const expression = CronExpressionParser.parse(cronSchedule, { tz: timezone, currentDate: from });
   let previous = expression.next().getTime();
