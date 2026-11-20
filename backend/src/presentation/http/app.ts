@@ -38,7 +38,17 @@ export function createApp(deps: AppDependencies): Express {
   app.use(helmet());
   app.use(cors({ origin: deps.corsOrigin }));
   app.use(express.json({ limit: '100kb' }));
-  app.use(pinoHttp({ logger: deps.logger, autoLogging: { ignore: (req) => req.url === '/health' } }));
+  app.use(
+    pinoHttp({
+      logger: deps.logger,
+      autoLogging: { ignore: (req) => req.url === '/health' },
+      // One short line per request; headers (and the bearer token in them) stay out of the logs.
+      serializers: {
+        req: (req: { id: unknown; method: string; url: string }) => ({ id: req.id, method: req.method, url: req.url }),
+        res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
+      },
+    }),
+  );
 
   // Public
   app.use(createHealthRouter(deps.healthChecks));

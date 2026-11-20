@@ -17,7 +17,7 @@ and [TODO.md](TODO.md) for progress.
 | Scheduler | BullMQ on Redis |
 | Frontend | Vite, React 19, TypeScript, React Router, TanStack Query, Tailwind CSS 4 |
 | Tests | Vitest, supertest |
-| Deploy | Docker Compose (_TBD_) |
+| Deploy | Docker Compose: Postgres 16, Redis 7, backend (Node 24), frontend (nginx) |
 
 ## Repository layout
 
@@ -28,6 +28,38 @@ docker/     Container config (pgAdmin server list)
 docs/       Database notes and AI-usage records
 ```
 
+## Run in Docker (one command)
+
+Requires Docker with Compose v2.
+
+```bash
+docker compose up -d --build
+```
+
+Open **http://localhost:8080** and sign in with `admin` / `admin`. That is all: no `.env` is needed,
+the database is created on first start and the backend applies migrations at boot.
+
+| Service | URL / port | Notes |
+|---|---|---|
+| frontend | http://localhost:8080 | nginx serves the SPA and proxies `/api` to the backend |
+| backend | http://localhost:3000 | `GET /health` reports Postgres and Redis |
+| postgres | localhost:5433 | user `postgres`, password `postgres`, database `scheduler` |
+| redis | localhost:6382 | append-only file, so schedules survive restarts |
+| pgadmin (optional) | http://localhost:5050 | `docker compose --profile tools up -d`; server is preconfigured |
+
+```bash
+docker compose ps                 # all services should be healthy
+docker compose logs -f backend    # JSON logs, webhook URLs redacted
+docker compose down               # stop (data stays in named volumes)
+docker compose down -v            # stop and delete all data
+```
+
+If a host port is taken, set `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT` or `REDIS_PORT` in a
+`.env` file (see [.env.example](.env.example)).
+
+The defaults are for local use. For a real deployment set `NODE_ENV=production`, `JWT_SECRET` and
+`ADMIN_PASSWORD`; the backend refuses to start in production with the dev defaults.
+
 ## Configuration
 
 All variables are listed in [.env.example](.env.example) with working local values. Copy it to `.env`
@@ -37,14 +69,17 @@ only if you want to change something:
 cp .env.example .env
 ```
 
-## Run locally
+## Run locally (without Docker for the app)
 
-Requires Node.js 22+ and running Postgres and Redis.
+Requires Node.js 22+. Start only Postgres and Redis in Docker, then run the app on the host:
 
 ```bash
+docker compose up -d postgres redis
+cp .env.example .env   # points the backend at localhost:5433 and :6382
+
 cd backend
 npm install
-npm run dev          # reads ../.env if present
+npm run dev          # reads ../.env
 ```
 
 The API applies pending database migrations at boot, then listens on `http://localhost:3000`. Check
@@ -102,10 +137,6 @@ cd backend
 npm run db:generate   # after changing the schema
 npm run db:migrate    # apply migrations without starting the API
 ```
-
-## Run in Docker
-
-_TBD_
 
 ## Unit tests
 

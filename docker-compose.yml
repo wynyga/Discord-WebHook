@@ -1,0 +1,119 @@
+# One command: `docker compose up -d --build`, then open http://localhost:8080 (admin / admin).
+# Every variable has a local default, so no .env is needed; values in .env override them.
+# Defaults are for local use only: for a real deployment set NODE_ENV=production and real secrets
+# (the backend then refuses to start with the dev defaults).
+
+name: task-scheduler
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: task-scheduler-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # Created on first start; the backend's migrations then create the tables inside it.
+      POSTGRES_DB: ${POSTGRES_DB:-scheduler}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: task-scheduler-redis
+    restart: unless-stopped
+    # Append-only file keeps BullMQ schedules and pending retries across restarts.
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6382}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    image: task-scheduler-backend
+    container_name: task-scheduler-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Service names on the compose network, not the host ports above.
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-scheduler}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-at-least-32-chars}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-8080}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
+      DISCORD_TIMEOUT_MS: ${DISCORD_TIMEOUT_MS:-10000}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    # Time for the worker to finish a running delivery after SIGTERM.
+    stop_grace_period: 15s
+
+  frontend:
+    build: ./frontend
+    image: task-scheduler-frontend
+    container_name: task-scheduler-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      # Through the proxy, so a healthy frontend means the whole path to the API works.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # Optional: `docker compose --profile tools up -d`, then http://localhost:5050.
+  pgadmin:
+    image: dpage/pgadmin4:9
+    profiles: [tools]
+    container_name: task-scheduler-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:

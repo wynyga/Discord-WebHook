@@ -121,9 +121,12 @@ Validation rules:
 ### Configuration and minimal setup
 
 - `.env.example` is the single list of variables, with working local values.
-- `docker-compose.yml` loads `.env` with `env_file: { path: .env, required: false }` and gives every
-  variable a local default (`${JWT_SECRET:-dev-only-change-me}`), so `docker compose up` works on a
-  fresh clone with no extra step.
+- `docker-compose.yml` gives every variable a local default through interpolation
+  (`${JWT_SECRET:-dev-only-change-me...}`), so `docker compose up` works on a fresh clone with no extra
+  step; a `.env` overrides them. No `env_file`: the host-oriented `DATABASE_URL` in `.env` must not
+  leak into the container, which reaches Postgres and Redis by service name.
+- Compose runs `NODE_ENV=development` by default; logs are JSON whenever stdout is not a terminal, so
+  the production image does not need pino-pretty.
 - Config is parsed once at boot with Zod and the process exits on invalid values.
 - With `NODE_ENV=production`, the backend refuses to start if `JWT_SECRET` or `ADMIN_PASSWORD` is still
   the dev default; the deploy setup sets real values.

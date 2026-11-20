@@ -75,13 +75,16 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 - [x] Task detail page with Overview / Runs; backend adds `nextRunAt`, `nextRuns`, `activity24h`
 
 ## Phase 7: Docker
-- [ ] Backend Dockerfile (multi-stage)
-- [ ] Frontend Dockerfile (build + nginx, proxy `/api`)
-- [ ] `docker-compose.yml` with postgres, redis, healthchecks (draft with postgres, redis, pgadmin
-      exists locally, not committed or tested yet)
-- [ ] Optional `.env` (`required: false`) and local defaults for every variable
-- [ ] `pgadmin` service under the `tools` profile (uses `docker/pgadmin/servers.json`)
-- [ ] Verify clean `docker compose up`
+- [x] Backend Dockerfile (multi-stage, production deps only, non-root, migrations included)
+- [x] Frontend Dockerfile (build + nginx, proxy `/api`, SPA fallback, cached hashed assets)
+- [x] `docker-compose.yml` with postgres, redis, backend, frontend and healthchecks
+- [x] Local defaults for every variable; `.env` optional
+- [x] `pgadmin` service under the `tools` profile (uses `docker/pgadmin/servers.json`)
+- [x] Reuse the existing `task-scheduler` project, containers and volumes (Postgres 16 data kept)
+- [x] Verify `docker compose up`: all services healthy, data kept, `/api` proxy, SPA deep links,
+      JSON logs with redaction, graceful SIGTERM, UI checked in a browser on :8080
+- [x] Fix lockfiles: Windows npm left out optional `@emnapi/*` entries, so `npm ci` failed on Linux;
+      completed them from a Linux container (both `npm ci` pass on Windows and Linux)
 
 ## Phase 8: Documentation
 - [ ] README: run locally, run in Docker, tests, API list, libraries
