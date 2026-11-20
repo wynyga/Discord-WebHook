@@ -61,14 +61,15 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 
 ## Phase 6: Frontend
 - [x] Look up web platform guidance (`modern-web-guidance`) and record the rules in PLAN section 6
-- [ ] Vite + React + TypeScript + Tailwind scaffold, theme tokens (light/dark, blurple accent)
-- [ ] Theme: `color-scheme` meta + inline FOUC script, two-state toggle, `:has(meta)` mapping
-- [ ] Auth flow and API client
-- [ ] Dashboard page (Bit Cron Dashboard reference)
-- [ ] Tasks page: list, form with cron presets and preview (MAGIKA reference), actions
-- [ ] Logs page (GraphCMS Webhook Logs reference)
-- [ ] Responsive pass
-- [ ] Frontend tests (form validation, status badge, 401 handling)
+- [x] Vite + React + TypeScript + Tailwind scaffold, theme tokens (light/dark, blurple accent)
+- [x] Theme: `color-scheme` meta + inline FOUC script, two-state toggle, `:has(meta)` mapping
+- [x] Auth flow and API client
+- [x] Dashboard page (Bit Cron Dashboard reference)
+- [x] Tasks page: list, form with cron presets and preview (MAGIKA reference), actions
+- [x] Logs page (GraphCMS Webhook Logs reference)
+- [x] Responsive layout: sidebar or top nav, tables stack into cards below 600px (container query)
+- [x] Frontend tests (89 tests, 94.7% lines): form validation, API errors, auth and 401, dialogs, toasts
+- [ ] Visual check in a browser (light, dark, narrow) — needs your go-ahead
 
 ## Phase 7: Docker
 - [ ] Backend Dockerfile (multi-stage)

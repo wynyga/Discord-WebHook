@@ -1,0 +1,380 @@
+@import 'tailwindcss';
+
+/*
+ * Theme
+ * - Each token has a light and a dark value.
+ * - Fallback: the media query follows the system scheme (browsers without light-dark()).
+ * - Upgrade: light-dark() follows `color-scheme`, which the theme toggle sets through the <meta>.
+ * Contrast: text tokens reach 4.5:1 on canvas and surface; control borders reach 3:1.
+ */
+:root {
+  color-scheme: light dark;
+
+  --light-canvas: #f5f6fa;
+  --dark-canvas: #0f1117;
+  --light-surface: #ffffff;
+  --dark-surface: #171a23;
+  --light-surface-2: #eef0f5;
+  --dark-surface-2: #212533;
+  --light-line: #dfe2ea;
+  --dark-line: #2d3242;
+  --light-line-strong: #767c8e;
+  --dark-line-strong: #7a8196;
+  --light-fg: #1a1d29;
+  --dark-fg: #e8eaf1;
+  --light-muted: #555b6c;
+  --dark-muted: #a3a9b9;
+  --light-accent: #4752c4;
+  --dark-accent: #8b93f5;
+  --light-on-accent: #ffffff;
+  --dark-on-accent: #0c0e1c;
+  --light-accent-soft: #e8eafd;
+  --dark-accent-soft: #252a52;
+  --light-success: #0d6b39;
+  --dark-success: #74e3a5;
+  --light-success-soft: #e1f4e8;
+  --dark-success-soft: #12301f;
+  --light-warning: #8a5000;
+  --dark-warning: #f7c766;
+  --light-warning-soft: #fcefd3;
+  --dark-warning-soft: #392a0d;
+  --light-danger: #b02a21;
+  --dark-danger: #ff9389;
+  --light-danger-soft: #fce6e4;
+  --dark-danger-soft: #3d1614;
+
+  --canvas: var(--light-canvas);
+  --surface: var(--light-surface);
+  --surface-2: var(--light-surface-2);
+  --line: var(--light-line);
+  --line-strong: var(--light-line-strong);
+  --fg: var(--light-fg);
+  --muted: var(--light-muted);
+  --accent: var(--light-accent);
+  --on-accent: var(--light-on-accent);
+  --accent-soft: var(--light-accent-soft);
+  --success: var(--light-success);
+  --success-soft: var(--light-success-soft);
+  --warning: var(--light-warning);
+  --warning-soft: var(--light-warning-soft);
+  --danger: var(--light-danger);
+  --danger-soft: var(--light-danger-soft);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: var(--dark-canvas);
+    --surface: var(--dark-surface);
+    --surface-2: var(--dark-surface-2);
+    --line: var(--dark-line);
+    --line-strong: var(--dark-line-strong);
+    --fg: var(--dark-fg);
+    --muted: var(--dark-muted);
+    --accent: var(--dark-accent);
+    --on-accent: var(--dark-on-accent);
+    --accent-soft: var(--dark-accent-soft);
+    --success: var(--dark-success);
+    --success-soft: var(--dark-success-soft);
+    --warning: var(--dark-warning);
+    --warning-soft: var(--dark-warning-soft);
+    --danger: var(--dark-danger);
+    --danger-soft: var(--dark-danger-soft);
+  }
+}
+
+@supports (color: light-dark(white, black)) {
+  :root {
+    --canvas: light-dark(var(--light-canvas), var(--dark-canvas));
+    --surface: light-dark(var(--light-surface), var(--dark-surface));
+    --surface-2: light-dark(var(--light-surface-2), var(--dark-surface-2));
+    --line: light-dark(var(--light-line), var(--dark-line));
+    --line-strong: light-dark(var(--light-line-strong), var(--dark-line-strong));
+    --fg: light-dark(var(--light-fg), var(--dark-fg));
+    --muted: light-dark(var(--light-muted), var(--dark-muted));
+    --accent: light-dark(var(--light-accent), var(--dark-accent));
+    --on-accent: light-dark(var(--light-on-accent), var(--dark-on-accent));
+    --accent-soft: light-dark(var(--light-accent-soft), var(--dark-accent-soft));
+    --success: light-dark(var(--light-success), var(--dark-success));
+    --success-soft: light-dark(var(--light-success-soft), var(--dark-success-soft));
+    --warning: light-dark(var(--light-warning), var(--dark-warning));
+    --warning-soft: light-dark(var(--light-warning-soft), var(--dark-warning-soft));
+    --danger: light-dark(var(--light-danger), var(--dark-danger));
+    --danger-soft: light-dark(var(--light-danger-soft), var(--dark-danger-soft));
+  }
+}
+
+/* The toggle writes the <meta>; map it back, because author CSS overrides the <meta> hint. */
+:root:has(> head > meta[name='color-scheme'][content='dark']) {
+  color-scheme: dark;
+}
+:root:has(> head > meta[name='color-scheme'][content='light']) {
+  color-scheme: light;
+}
+
+/* Without light-dark() the toggle could only recolor native controls, so it is hidden there. */
+@supports not (color: light-dark(white, black)) {
+  .theme-toggle {
+    display: none;
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+}
+
+@layer base {
+  html {
+    accent-color: var(--accent);
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  body {
+    background: var(--canvas);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Form controls: readable size (no iOS zoom), 48px touch target, 3:1 borders. */
+  :where(input:not([type='radio'], [type='checkbox']), select, textarea) {
+    font: inherit;
+    font-size: max(1rem, 1em);
+    min-block-size: 48px;
+    inline-size: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.625rem;
+    background: var(--surface);
+    color: var(--fg);
+  }
+
+  :where(input, select, textarea)[aria-invalid='true'] {
+    border-color: var(--danger);
+    box-shadow: inset 0 0 0 1px var(--danger);
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  ::placeholder {
+    color: var(--muted);
+    opacity: 1;
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-block-size: 44px;
+    padding: 0.5rem 1rem;
+    border-radius: 0.625rem;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--fg);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .btn:hover {
+    background: var(--surface-2);
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  .btn-primary:hover {
+    background: color-mix(in oklab, var(--accent), black 12%);
+  }
+  .btn-danger {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: var(--surface);
+  }
+  .btn-ghost {
+    border-color: transparent;
+    background: transparent;
+  }
+  .btn-sm {
+    min-block-size: 36px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .field-error {
+    color: var(--danger);
+    font-size: 0.875rem;
+  }
+
+  /* Modal dialogs: keep scrolling inside the dialog from moving the page behind it. */
+  dialog:modal {
+    overscroll-behavior: contain;
+  }
+  dialog::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background: color-mix(in oklab, black, transparent 45%);
+  }
+
+  /*
+   * Data tables: scroll in a focusable region with a sticky header; below 600px of their own width,
+   * rows become cards and each cell shows its column name (from data-label) before the value.
+   */
+  .table-region {
+    overflow: auto;
+    max-inline-size: 100%;
+    container-type: inline-size;
+  }
+  .data-table {
+    inline-size: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.9375rem;
+  }
+  .data-table thead {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+  }
+  .data-table th,
+  .data-table td {
+    padding: 0.75rem 1rem;
+    text-align: start;
+    vertical-align: middle;
+    border-block-end: 1px solid var(--line);
+  }
+  .data-table thead th {
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .data-table tbody th {
+    font-weight: 600;
+  }
+  /* The stacked layout sets display on rows, which would otherwise override the hidden attribute. */
+  .data-table [hidden] {
+    display: none !important;
+  }
+
+  @container (width < 600px) {
+    .data-table,
+    .data-table tbody,
+    .data-table tr,
+    .data-table th,
+    .data-table td {
+      display: block;
+    }
+    .data-table thead {
+      display: none;
+    }
+    .data-table tbody tr {
+      padding-block: 0.5rem;
+      border-block-end: 1px solid var(--line);
+    }
+    .data-table tbody :is(th, td) {
+      border: 0;
+      padding-block: 0.25rem;
+    }
+    .data-table tbody td[data-label]::before {
+      content: attr(data-label) ': ';
+      color: var(--muted);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+  }
+
+  /* Status badges always carry text and an icon; the border keeps them visible in forced colors. */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  @media (forced-colors: active) {
+    .badge {
+      border-color: CanvasText;
+    }
+  }
+
+  /* Toast stack, bottom end of the viewport. Toasts are top-layer popovers, positioned one by one. */
+  .toast[popover] {
+    position: fixed;
+    inset: auto 1rem 1rem auto;
+    margin: 0;
+    max-inline-size: min(24rem, calc(100dvw - 2rem));
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    color: var(--fg);
+    box-shadow: 0 10px 30px color-mix(in oklab, black, transparent 80%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast[popover] {
+    transition:
+      opacity 0.2s,
+      translate 0.2s,
+      display 0.2s,
+      overlay 0.2s;
+    transition-behavior: allow-discrete;
+  }
+  /* :is() keeps the rule valid where the polyfill supplies the .\:popover-open class instead. */
+  .toast[popover]:not(:is(:popover-open, .\:popover-open)) {
+    opacity: 0;
+    translate: 0 0.5rem;
+  }
+  @starting-style {
+    .toast[popover]:is(:popover-open, .\:popover-open) {
+      opacity: 0;
+      translate: 0 0.5rem;
+    }
+  }
+}

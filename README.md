@@ -15,7 +15,7 @@ and [TODO.md](TODO.md) for progress.
 | Backend | Node.js 22+, Express 5, TypeScript, Zod, pino |
 | Database | PostgreSQL, Drizzle ORM (migrations) |
 | Scheduler | BullMQ on Redis |
-| Frontend | Vite, React, TypeScript, Tailwind (_TBD_) |
+| Frontend | Vite, React 19, TypeScript, React Router, TanStack Query, Tailwind CSS 4 |
 | Tests | Vitest, supertest |
 | Deploy | Docker Compose (_TBD_) |
 
@@ -23,7 +23,7 @@ and [TODO.md](TODO.md) for progress.
 
 ```
 backend/    Express API and worker (clean architecture)
-frontend/   Vite + React SPA (TBD)
+frontend/   Vite + React SPA (dashboard, tasks, logs)
 docker/     Container config (pgAdmin server list)
 docs/       Database notes and AI-usage records
 ```
@@ -49,6 +49,28 @@ npm run dev          # reads ../.env if present
 
 The API applies pending database migrations at boot, then listens on `http://localhost:3000`. Check
 it with `curl http://localhost:3000/health`.
+
+Then the frontend, in a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:5173, proxies /api to the backend
+```
+
+Sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` (default `admin` / `admin`). Set
+`VITE_API_PROXY_TARGET` if the backend is not on `http://localhost:3000`.
+
+### Frontend pages
+
+| Page | What it does |
+|---|---|
+| Dashboard | Task counts by status, delivery results of the last 24 h, five most recent runs |
+| Tasks | List with status badges; filter by status; run now, pause/resume, edit, delete (with confirmation) |
+| New / edit task | Schedule presets or custom cron with a readable preview, timezone, webhook, JSON payload, retries |
+| Logs | Every attempt with status, retry number, HTTP code and duration; filter by task and status |
+
+Light and dark themes follow the system; the toggle in the sidebar overrides it for this browser.
 
 ## How a task runs
 
@@ -92,7 +114,15 @@ npm test             # run once
 npm run test:coverage
 ```
 
-The unit tests need no database or Redis: Discord is mocked, the queue is mocked, and repositories
+Frontend:
+
+```bash
+cd frontend
+npm test             # Vitest + Testing Library on jsdom, API mocked
+npm run test:coverage
+```
+
+The backend unit tests need no database or Redis: Discord is mocked, the queue is mocked, and repositories
 run on PGlite (in-process Postgres) with the real migrations.
 
 Integration tests against a real Redis are skipped unless `TEST_REDIS_URL` is set. They flush that
@@ -181,3 +211,10 @@ UI inspiration from Dribbble, listed in [PLAN.md](PLAN.md#design-references-drib
 | vitest, @vitest/coverage-v8, supertest | Unit tests and coverage |
 | @electric-sql/pglite | In-process Postgres for repository tests |
 | typescript, tsx, eslint, typescript-eslint | Tooling |
+| react, react-dom, react-router | UI and routing |
+| @tanstack/react-query | Server state, caching and background refresh |
+| tailwindcss, @tailwindcss/vite | Styling |
+| cronstrue | Cron expressions in plain words |
+| @oddbird/popover-polyfill | Popover API, loaded only in browsers that lack it |
+| vite, @vitejs/plugin-react | Dev server and build |
+| @testing-library/react, user-event, jest-dom, jsdom | Frontend tests |
