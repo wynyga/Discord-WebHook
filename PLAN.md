@@ -28,16 +28,17 @@ progress and `docs/ai-usage/` for the recorded sessions.
 backend/src/
   domain/          entities, repository interfaces, ports (DiscordPort, SchedulerPort)
   application/     use cases (one class per action), no framework imports
-  infrastructure/  drizzle repositories + migrations, BullMQ scheduler adapter, Discord client
+  infrastructure/  drizzle repositories + migrations, BullMQ scheduler and worker, Discord client
   presentation/    http/ (express routers, zod schemas, auth middleware, error handler)
-                   worker/ (BullMQ worker: inbound adapter that calls ExecuteTask)
   container.ts     composition root: wires adapters to ports by hand
   server.ts        process entry, graceful shutdown
 ```
 
 Dependency rule: `presentation -> application -> domain`; `infrastructure -> domain`.
-Use cases depend only on interfaces, so tests inject fakes. The worker is an inbound adapter, like a
-router, so it lives in `presentation/`; `infrastructure/` never imports `application/`.
+Use cases depend only on interfaces, so tests inject fakes. The BullMQ worker lives in
+`infrastructure/` and receives an `ExecutionHandler` (a domain type) from the composition root, which
+passes `ExecuteTask`. So `infrastructure/` never imports `application/`, and `presentation/` stays
+HTTP only. (Changed in Phase 4; the first draft put the worker in `presentation/worker/`.)
 
 ### Execution flow
 
@@ -46,7 +47,9 @@ router, so it lives in `presentation/`; `infrastructure/` never imports `applica
 2. At the scheduled time the worker runs `ExecuteTask(taskId)`.
 3. `ExecuteTask` loads the task, POSTs the stored JSONB payload via `DiscordPort`, and writes a
    `task_logs` row for the attempt (`success`, `retrying` or `failed`, with `retry_count`).
-4. A failed attempt throws, so BullMQ retries it with backoff until `maxRetry` is exhausted.
+4. `ExecuteTask` returns an outcome (`success`, `skipped`, `retry`, `failed`) instead of throwing; the
+   worker turns `retry` into a thrown `RetryLaterError` and `failed` into `UnrecoverableError`, so BullMQ
+   retries with backoff until `maxRetry` is exhausted.
    - The webhook is called with `?wait=true` so Discord confirms delivery.
    - On HTTP 429, `DiscordPort` throws a `RateLimitedError` carrying `retry_after`; a custom backoff
      strategy waits that long instead of `retry_delay_ms`.
@@ -96,7 +99,7 @@ Migrations are generated from the schema by drizzle-kit, committed, and applied 
 | POST | `/tasks/:id/run` | Trigger an immediate run |
 | GET | `/tasks/:id/logs` | Logs of one task |
 | GET | `/logs` | All logs (filter by task and status, paginate) |
-| GET | `/dashboard/summary` | Totals: all, active, failed |
+| GET | `/dashboard/summary` | Task totals by status, executions of the last 24 hours by outcome |
 
 Validation rules:
 - `cronSchedule`: valid 5-field cron expression; `timezone`: valid IANA name (`Intl.supportedValuesOf`).
@@ -146,6 +149,22 @@ Validation rules:
 
 Style: light and dark theme, neutral surfaces with Discord blurple (`#5865F2`) as the accent; status
 colors green (active/success), amber (paused/retrying), red (failed).
+
+### Web platform rules (from `modern-web-guidance`)
+
+Browser target: Baseline widely available; newer features only with the fallback the guide gives.
+
+| Area | Rule |
+|---|---|
+| Theme | `<meta name="color-scheme" content="light dark">` plus `color-scheme: light dark` on `:root`. Color tokens as custom properties, switched with `prefers-color-scheme`, upgraded to `light-dark()` inside `@supports` (only newly available). |
+| Theme toggle | Allowed because this is a developer tool. Two states: "system" (nothing stored) and the opposite of what is shown (stored in `localStorage`). Applied through the `<meta>` by a tiny inline script right after it (no FOUC). CSS maps the `<meta>` back with `:root:has(meta[content="dark"])`; the Tailwind `dark:` variant keys off that and the media query, never a JS-only `.dark` class. |
+| Navigation | One `<nav aria-label="Primary">` tree: sidebar when wide, a top row when narrow (three links fit, so no drawer). Current page via `aria-current="page"` (React Router `NavLink`) plus a non-color marker. |
+| Tables (tasks, logs) | Real `<table>` with `<caption>`, `<thead>`, row `<th>`. Wrapper is `role="region"`, `tabindex="0"`, `aria-labelledby` the caption; sticky header; `@container (width < 600px)` turns rows into stacked cards with labels from `::before`. |
+| Forms | Visible labels above fields; `required`, `maxlength` and friends. Style errors with `:user-invalid`, not `:invalid`, and keep `aria-invalid` in step (starting at `false`). API errors (`details[].path`) set `aria-invalid="true"` and `aria-describedby` on that field. After a failed submit, focus the first invalid field. Never disable submit to block validation; disable only while a valid submit is in flight. Inputs use `font-size: max(1rem, 1em)` and a 48px tap target. Login uses `autocomplete="username"` / `"current-password"`; the webhook URL and the payload editor turn off autocorrect and spellcheck. |
+| Confirm delete | Native `<dialog>` opened with `showModal()`, `aria-labelledby` its title, `autofocus` on Cancel, buttons in `<form method="dialog">`; no `role="dialog"`, `aria-modal`, focus trap or Esc handler. Read and reset `returnValue` on close. `overscroll-behavior: contain` on `dialog:modal` and `::backdrop`. |
+| Notifications | Used sparingly (saved, run queued); the outcome is also visible in the list or logs. One `role="region" aria-label="Notifications"` container of `popover="manual"` toasts, each with a close button. Announced via `ariaNotify()` when present, otherwise a polite live region. Not shown while a modal is open. Auto-dismiss pauses while focus is inside. |
+| Status badges | Text and icon, never color alone; text at 4.5:1 and borders at 3:1 in both themes; visible under `forced-colors: active`. |
+| Color tints | `color-mix(in oklab, ...)` against white or black; never `in oklch` with neutrals. |
 
 ## 7. Testing strategy (Vitest)
 

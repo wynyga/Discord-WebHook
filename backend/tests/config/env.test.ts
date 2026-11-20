@@ -20,6 +20,8 @@ describe('loadConfig', () => {
       jwt: { secret: validEnv.JWT_SECRET, expiresIn: '1h' },
       admin: { username: 'admin', password: 'secret' },
       corsOrigin: ['http://localhost:5173'],
+      workerConcurrency: 5,
+      discordTimeoutMs: 10_000,
     });
   });
 
@@ -52,6 +54,8 @@ describe('loadConfig', () => {
     ['JWT_SECRET', 'too-short'],
     ['JWT_EXPIRES_IN', 'one hour'],
     ['PORT', '70000'],
+    ['WORKER_CONCURRENCY', '0'],
+    ['DISCORD_TIMEOUT_MS', '100'],
   ])('rejects invalid %s', (key, value) => {
     expect(() => loadConfig({ ...validEnv, [key]: value })).toThrow(key);
   });

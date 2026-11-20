@@ -28,6 +28,17 @@ describe('GET /health', () => {
     expect(res.body).toEqual({ status: 'degraded', checks: { database: 'up', redis: 'down' } });
   });
 
+  it('treats a hanging check as down instead of hanging', async () => {
+    const { createHealthRouter } = await import('../../../src/presentation/http/routes/health.js');
+    const express = (await import('express')).default;
+    const app = express().use(createHealthRouter({ redis: () => new Promise<void>(() => {}) }, 20));
+
+    const res = await request(app).get('/health');
+
+    expect(res.status).toBe(503);
+    expect(res.body.checks).toEqual({ redis: 'down' });
+  });
+
   it('needs no token', async () => {
     const res = await request(buildTestApp().app).get('/health');
 

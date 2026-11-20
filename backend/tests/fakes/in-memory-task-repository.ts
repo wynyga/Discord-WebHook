@@ -33,6 +33,10 @@ export class InMemoryTaskRepository implements TaskRepository {
     return { items, total: matching.length, page, pageSize };
   }
 
+  async listSchedulable(): Promise<Task[]> {
+    return [...this.rows.values()].filter((task) => task.status !== 'paused').map((task) => ({ ...task }));
+  }
+
   async update(id: string, changes: TaskChanges): Promise<Task | null> {
     const task = this.rows.get(id);
     if (!task) return null;

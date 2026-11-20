@@ -3,13 +3,17 @@ import express, { Router, type Express } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import type { Login } from '../../application/auth/login.js';
+import type { GetDashboardSummary } from '../../application/dashboard/get-dashboard-summary.js';
+import type { ListLogs } from '../../application/logs/list-logs.js';
 import type { TaskUseCases } from '../../application/tasks/index.js';
 import type { TokenService } from '../../domain/auth.js';
 import type { Logger } from '../../infrastructure/logger.js';
 import { requireAuth } from './middleware/auth.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { createAuthRouter, type LoginRateLimit } from './routes/auth.js';
+import { createDashboardRouter } from './routes/dashboard.js';
 import { createHealthRouter, type HealthCheck } from './routes/health.js';
+import { createLogsRouter } from './routes/logs.js';
 import { createTasksRouter } from './routes/tasks.js';
 
 export interface AppDependencies {
@@ -19,6 +23,8 @@ export interface AppDependencies {
   login: Login;
   tokens: TokenService;
   tasks: TaskUseCases;
+  listLogs: ListLogs;
+  dashboardSummary: GetDashboardSummary;
   loginRateLimit?: LoginRateLimit;
 }
 
@@ -43,6 +49,8 @@ export function createApp(deps: AppDependencies): Express {
   const api = Router();
   api.use(requireAuth(deps.tokens));
   api.use(createTasksRouter(deps.tasks));
+  api.use(createLogsRouter(deps.listLogs));
+  api.use(createDashboardRouter(deps.dashboardSummary));
   app.use(api);
 
   app.use(notFoundHandler);

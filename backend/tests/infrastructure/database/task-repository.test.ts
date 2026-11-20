@@ -80,6 +80,16 @@ describe('DrizzleTaskRepository', () => {
     expect(await repository.countByStatus()).toEqual({ active: 2, paused: 0, failed: 1 });
   });
 
+  it('lists every task that should be scheduled, skipping paused ones', async () => {
+    await repository.create({ ...taskInput({ name: 'active' }), status: 'active' });
+    await repository.create({ ...taskInput({ name: 'failed' }), status: 'failed' });
+    await repository.create({ ...taskInput({ name: 'paused' }), status: 'paused' });
+
+    const names = (await repository.listSchedulable()).map((t) => t.name).sort();
+
+    expect(names).toEqual(['active', 'failed']);
+  });
+
   it('lets the database reject out-of-range retries', async () => {
     await expect(repository.create({ ...taskInput({ maxRetry: 11 }), status: 'active' })).rejects.toThrow();
   });

@@ -30,35 +30,39 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 - [x] Config module: Zod-parsed env, refuse dev secrets in production
 - [x] Routers (error handler and pino logging done in Phase 1)
 - [x] Composition root (`container.ts`); scheduler is a logging stand-in until Phase 4
-- [ ] `/health` pings Postgres and Redis (Postgres done; Redis in Phase 4)
+- [x] `/health` pings Postgres and Redis (Redis added in Phase 4, with a 2 s timeout per check)
 - [x] Record AI session #3 (API planning)
 
 ## Phase 4: Scheduler, retry, Discord
-- [ ] `DiscordPort` and webhook client (`?wait=true`, `RateLimitedError` with `retry_after`)
-- [ ] BullMQ scheduler adapter in `infrastructure/` (register, remove, run now), replacing
+- [x] `DiscordPort` and webhook client (`?wait=true`, 429 carries `retry_after`, 4xx not retryable)
+- [x] BullMQ scheduler adapter in `infrastructure/` (register, remove, run now), replacing
       `LoggingScheduler` in `container.ts`
-- [ ] `POST /tasks/:id/run` route and `RunTaskNow` use case
-- [ ] Worker in `presentation/worker/` calling the `ExecuteTask` use case
-- [ ] Per-attempt `task_logs` rows
-- [ ] Retry with backoff: custom strategy for 429, `UnrecoverableError` for other 4xx
-- [ ] Failed-state handling (back to `active` on next success)
-- [ ] State rules: paused `PATCH` keeps the schedule off, run now on any status
-- [ ] Boot reconcile: register active tasks, remove orphan and paused schedulers
-- [ ] Graceful shutdown on `SIGTERM`
-- [ ] Dashboard summary and logs endpoints
+- [x] `POST /tasks/:id/run` route and `RunTaskNow` use case
+- [x] Worker in `infrastructure/` with the `ExecuteTask` handler injected (see PLAN section 2)
+- [x] Per-attempt `task_logs` rows
+- [x] Retry with backoff: custom strategy for 429, `UnrecoverableError` for other 4xx
+- [x] Failed-state handling (back to `active` on next success)
+- [x] State rules: paused `PATCH` keeps the schedule off, run now on any status
+- [x] Boot reconcile: register active tasks, remove orphan and paused schedulers
+- [x] Graceful shutdown on `SIGTERM` (worker, queue, Redis, Postgres in order)
+- [x] Dashboard summary and logs endpoints
+- [x] Integration tests against real Redis (`TEST_REDIS_URL`), smoke test against real Discord
 
 ## Phase 5: Unit tests
-- [ ] Task CRUD
-- [ ] Scheduler execution (`ExecuteTask`, adapter with mocked `Queue`, boot reconcile)
-- [ ] Retry mechanism (incl. 429 `retry_after`, non-retryable 4xx)
-- [ ] Auth middleware and login
-- [ ] Discord client (mocked)
-- [ ] Validation schemas
-- [ ] Coverage threshold with `vitest --coverage`
+- [x] Task CRUD
+- [x] Scheduler execution (`ExecuteTask`, adapter with mocked `Queue`, boot reconcile)
+- [x] Retry mechanism (incl. 429 `retry_after`, non-retryable 4xx)
+- [x] Auth middleware and login
+- [x] Discord client (mocked)
+- [x] Validation schemas
+- [x] Coverage threshold with `vitest --coverage`
+- [ ] Review the suite for gaps against the brief's list
 - [ ] Record AI session #4 (test generation)
 
 ## Phase 6: Frontend
+- [x] Look up web platform guidance (`modern-web-guidance`) and record the rules in PLAN section 6
 - [ ] Vite + React + TypeScript + Tailwind scaffold, theme tokens (light/dark, blurple accent)
+- [ ] Theme: `color-scheme` meta + inline FOUC script, two-state toggle, `:has(meta)` mapping
 - [ ] Auth flow and API client
 - [ ] Dashboard page (Bit Cron Dashboard reference)
 - [ ] Tasks page: list, form with cron presets and preview (MAGIKA reference), actions

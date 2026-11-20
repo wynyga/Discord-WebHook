@@ -7,4 +7,6 @@ export interface SchedulerPort {
   remove(taskId: string): Promise<void>;
   /** Queues one immediate execution, outside the schedule. */
   runNow(task: Task): Promise<void>;
+  /** Ids of every task that currently has a schedule. */
+  scheduledTaskIds(): Promise<string[]>;
 }

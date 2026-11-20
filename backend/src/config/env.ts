@@ -21,6 +21,8 @@ const envSchema = z
     ADMIN_USERNAME: z.string().min(1),
     ADMIN_PASSWORD: z.string().min(1),
     CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
+    WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(50).default(5),
+    DISCORD_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60_000).default(10_000),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
@@ -40,6 +42,8 @@ const envSchema = z
     jwt: { secret: env.JWT_SECRET, expiresIn: env.JWT_EXPIRES_IN },
     admin: { username: env.ADMIN_USERNAME, password: env.ADMIN_PASSWORD },
     corsOrigin: env.CORS_ORIGIN.split(',').map((origin) => origin.trim()),
+    workerConcurrency: env.WORKER_CONCURRENCY,
+    discordTimeoutMs: env.DISCORD_TIMEOUT_MS,
   }));
 
 export type Config = z.infer<typeof envSchema>;

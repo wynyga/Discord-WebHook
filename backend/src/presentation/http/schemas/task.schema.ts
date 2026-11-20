@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { isDiscordWebhookUrl } from '../../../domain/discord-webhook.js';
-import { PAGINATION } from '../../../domain/pagination.js';
 import { isValidCron, isValidTimezone } from '../../../domain/schedule.js';
 import { TASK_LIMITS, TASK_STATUSES } from '../../../domain/task.js';
 import { discordPayloadSchema } from './discord-payload.schema.js';
+import { pageQueryShape } from './pagination.schema.js';
 
 const { maxRetry, retryDelayMs } = TASK_LIMITS;
 
@@ -44,8 +44,7 @@ export const updateTaskSchema = z
 
 export const listTasksQuerySchema = z.object({
   status: z.enum(TASK_STATUSES).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(PAGINATION.maxPageSize).default(PAGINATION.defaultPageSize),
+  ...pageQueryShape,
 });
 
 export const taskIdParamsSchema = z.object({ id: z.uuid('Task id must be a UUID') });

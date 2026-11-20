@@ -1,4 +1,4 @@
-import { count, desc, eq } from 'drizzle-orm';
+import { count, desc, eq, ne } from 'drizzle-orm';
 import type { Page } from '../../domain/pagination.js';
 import { TASK_STATUSES, type Task, type TaskInput, type TaskStatus } from '../../domain/task.js';
 import type { TaskChanges, TaskListQuery, TaskRepository } from '../../domain/task-repository.js';
@@ -32,6 +32,11 @@ export class DrizzleTaskRepository implements TaskRepository {
       this.db.$count(tasks, where),
     ]);
     return { items: rows.map(toTask), total, page, pageSize };
+  }
+
+  async listSchedulable(): Promise<Task[]> {
+    const rows = await this.db.select().from(tasks).where(ne(tasks.status, 'paused'));
+    return rows.map(toTask);
   }
 
   async update(id: string, changes: TaskChanges): Promise<Task | null> {

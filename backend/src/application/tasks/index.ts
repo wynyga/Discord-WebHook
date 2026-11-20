@@ -6,11 +6,15 @@ import { GetTask } from './get-task.js';
 import { ListTasks } from './list-tasks.js';
 import { PauseTask } from './pause-task.js';
 import { ResumeTask } from './resume-task.js';
+import { RunTaskNow } from './run-task-now.js';
 import { UpdateTask } from './update-task.js';
 
-export { CreateTask, DeleteTask, GetTask, ListTasks, PauseTask, ResumeTask, UpdateTask };
+export { CreateTask, DeleteTask, GetTask, ListTasks, PauseTask, ResumeTask, RunTaskNow, UpdateTask };
+export { ExecuteTask } from './execute-task.js';
+export { ReconcileSchedules } from './reconcile-schedules.js';
 export type { TaskUpdate } from './update-task.js';
 
+/** Use cases behind the `/tasks` routes. */
 export interface TaskUseCases {
   create: CreateTask;
   update: UpdateTask;
@@ -19,6 +23,7 @@ export interface TaskUseCases {
   list: ListTasks;
   pause: PauseTask;
   resume: ResumeTask;
+  runNow: RunTaskNow;
 }
 
 export function createTaskUseCases(tasks: TaskRepository, scheduler: SchedulerPort): TaskUseCases {
@@ -30,5 +35,6 @@ export function createTaskUseCases(tasks: TaskRepository, scheduler: SchedulerPo
     list: new ListTasks(tasks),
     pause: new PauseTask(tasks, scheduler),
     resume: new ResumeTask(tasks, scheduler),
+    runNow: new RunTaskNow(tasks, scheduler),
   };
 }

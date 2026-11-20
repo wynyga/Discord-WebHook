@@ -11,6 +11,8 @@ export interface TaskRepository {
   create(input: TaskInput & { status: TaskStatus }): Promise<Task>;
   findById(id: string): Promise<Task | null>;
   list(query: TaskListQuery): Promise<Page<Task>>;
+  /** Every task that should have a schedule, i.e. all but paused ones. */
+  listSchedulable(): Promise<Task[]>;
   /** Returns the updated task, or null when it does not exist. */
   update(id: string, changes: TaskChanges): Promise<Task | null>;
   /** Returns false when the task does not exist. */

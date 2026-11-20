@@ -46,5 +46,12 @@ export function createTasksRouter(tasks: TaskUseCases): Router {
     res.json({ data: toTaskResponse(await tasks.resume.execute(id)) });
   });
 
+  // 202: the run is queued; its result shows up in the task's logs.
+  router.post('/tasks/:id/run', async (req, res) => {
+    const { id } = parseInput(taskIdParamsSchema, req.params);
+    await tasks.runNow.execute(id);
+    res.status(202).json({ data: { taskId: id, status: 'queued' } });
+  });
+
   return router;
 }

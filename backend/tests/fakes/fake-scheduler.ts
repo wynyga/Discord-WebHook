@@ -7,6 +7,7 @@ export function fakeScheduler() {
     upsert: vi.fn<(task: Task) => Promise<void>>().mockResolvedValue(undefined),
     remove: vi.fn<(taskId: string) => Promise<void>>().mockResolvedValue(undefined),
     runNow: vi.fn<(task: Task) => Promise<void>>().mockResolvedValue(undefined),
+    scheduledTaskIds: vi.fn<() => Promise<string[]>>().mockResolvedValue([]),
   } satisfies SchedulerPort;
 }
 
