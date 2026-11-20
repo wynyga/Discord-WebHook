@@ -75,7 +75,46 @@ npm run test:coverage
 
 ## API endpoints
 
-_TBD_. The planned list is in [PLAN.md](PLAN.md#4-api-all-routes-need-authorization-bearer-jwt-except-health-and-authlogin).
+Every route except `/health` and `/auth/login` needs `Authorization: Bearer <token>`. Get a token
+from `/auth/login` with `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/auth/login` | Exchange admin credentials for a JWT (rate limited) |
+| GET | `/health` | Readiness of the API and its dependencies |
+| POST | `/tasks` | Create a task |
+| GET | `/tasks?status=&page=&pageSize=` | List tasks, newest first |
+| GET | `/tasks/:id` | Task detail |
+| PATCH | `/tasks/:id` | Update a task; omit `webhookUrl` to keep the stored one |
+| DELETE | `/tasks/:id` | Delete a task, its schedule and its logs |
+| POST | `/tasks/:id/pause` | Pause the schedule |
+| POST | `/tasks/:id/resume` | Resume the schedule |
+
+Run-now, execution logs and the dashboard summary arrive with the scheduler (_TBD_).
+
+Webhook URLs are masked in responses (`.../webhooks/<id>/****abcd`). Errors use one shape:
+
+```json
+{ "error": { "code": "VALIDATION", "message": "Request validation failed",
+  "details": [{ "path": "cronSchedule", "message": "Must be a 5-field cron expression" }] } }
+```
+
+Quick try:
+
+```bash
+TOKEN=$(curl -s localhost:3000/auth/login -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin"}' | jq -r .data.token)
+
+curl -s localhost:3000/tasks -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{
+  "name": "Ping every 5 minutes",
+  "cronSchedule": "*/5 * * * *",
+  "timezone": "Asia/Jakarta",
+  "webhookUrl": "https://discord.com/api/webhooks/<id>/<token>",
+  "payload": { "content": "Task executed successfully!", "username": "Task Bot" },
+  "maxRetry": 3,
+  "retryDelayMs": 5000
+}'
+```
 
 ## AI tool usage
 
@@ -86,7 +125,7 @@ This project is developed with Claude Code (CLI). Each session's PLAN/TODO outpu
 |---|---|---|
 | 1 | Initial project setup | [01-initial-setup.md](docs/ai-usage/01-initial-setup.md) |
 | 2 | Database schema design | [02-database-schema.md](docs/ai-usage/02-database-schema.md) |
-| 3 | API endpoint planning | _TBD_ |
+| 3 | API endpoint planning | [03-api-endpoints.md](docs/ai-usage/03-api-endpoints.md) |
 | 4 | Unit test generation | _TBD_ |
 
 ## Design references
@@ -106,4 +145,5 @@ UI inspiration from Dribbble, listed in [PLAN.md](PLAN.md#design-references-drib
 | cron-parser | Cron validation and next-run calculation |
 | jose | JWT signing and verification |
 | vitest, @vitest/coverage-v8, supertest | Unit tests and coverage |
+| @electric-sql/pglite | In-process Postgres for repository tests |
 | typescript, tsx, eslint, typescript-eslint | Tooling |

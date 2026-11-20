@@ -9,7 +9,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/server.ts', 'src/infrastructure/database/migrate-cli.ts'],
+      // Process entry points and wiring; their parts are tested on their own.
+      exclude: ['src/server.ts', 'src/container.ts', 'src/infrastructure/database/migrate-cli.ts'],
       reporter: ['text', 'html'],
       thresholds: {
         lines: 80,

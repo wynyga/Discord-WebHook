@@ -1,15 +1,10 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
-import { createApp } from '../../../src/presentation/http/app.js';
-import { silentLogger } from '../../helpers/logger.js';
-
-function buildApp(healthChecks = {}) {
-  return createApp({ logger: silentLogger(), corsOrigin: ['http://localhost:5173'], healthChecks });
-}
+import { buildTestApp } from '../../helpers/app.js';
 
 describe('GET /health', () => {
   it('returns 200 when every check passes', async () => {
-    const app = buildApp({ database: async () => {}, redis: async () => {} });
+    const { app } = buildTestApp({ healthChecks: { database: async () => {}, redis: async () => {} } });
 
     const res = await request(app).get('/health');
 
@@ -18,10 +13,12 @@ describe('GET /health', () => {
   });
 
   it('returns 503 when a check fails', async () => {
-    const app = buildApp({
-      database: async () => {},
-      redis: async () => {
-        throw new Error('ECONNREFUSED');
+    const { app } = buildTestApp({
+      healthChecks: {
+        database: async () => {},
+        redis: async () => {
+          throw new Error('ECONNREFUSED');
+        },
       },
     });
 
@@ -30,19 +27,33 @@ describe('GET /health', () => {
     expect(res.status).toBe(503);
     expect(res.body).toEqual({ status: 'degraded', checks: { database: 'up', redis: 'down' } });
   });
+
+  it('needs no token', async () => {
+    const res = await request(buildTestApp().app).get('/health');
+
+    expect(res.status).toBe(200);
+  });
 });
 
 describe('app defaults', () => {
-  it('returns a JSON 404 for unknown routes', async () => {
-    const res = await request(buildApp()).get('/nope');
+  it('hides unknown routes behind auth', async () => {
+    const res = await request(buildTestApp().app).get('/nope');
+
+    expect(res.status).toBe(401);
+  });
+
+  it('returns a JSON 404 for unknown routes when authenticated', async () => {
+    const { app, authHeader } = buildTestApp();
+
+    const res = await request(app).get('/nope').set('Authorization', await authHeader());
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
 
   it('rejects malformed JSON with 400', async () => {
-    const res = await request(buildApp())
-      .post('/health')
+    const res = await request(buildTestApp().app)
+      .post('/auth/login')
       .set('Content-Type', 'application/json')
       .send('{"broken":');
 
@@ -51,7 +62,7 @@ describe('app defaults', () => {
   });
 
   it('sets security headers and hides the framework', async () => {
-    const res = await request(buildApp()).get('/health');
+    const res = await request(buildTestApp().app).get('/health');
 
     expect(res.headers['x-powered-by']).toBeUndefined();
     expect(res.headers['x-content-type-options']).toBe('nosniff');

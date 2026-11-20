@@ -1,7 +1,6 @@
 import type { Server } from 'node:http';
 import { loadConfig } from './config/env.js';
-import { createDatabase } from './infrastructure/database/client.js';
-import { runMigrations } from './infrastructure/database/migrate.js';
+import { buildContainer } from './container.js';
 import { createLogger, type Logger } from './infrastructure/logger.js';
 import { createApp } from './presentation/http/app.js';
 
@@ -13,20 +12,14 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const logger = createLogger(config);
 
-  const database = createDatabase(config.databaseUrl);
-  await runMigrations(database.db, logger);
-
-  const app = createApp({
-    logger,
-    corsOrigin: config.corsOrigin,
-    healthChecks: { database: database.ping },
-  });
+  const container = await buildContainer(config, logger);
+  const app = createApp(container.app);
 
   const server = app.listen(config.port, () => {
     logger.info({ port: config.port }, 'API listening');
   });
 
-  registerShutdown(server, logger, [database.close]);
+  registerShutdown(server, logger, container.closers);
 }
 
 /** Stops accepting requests, then closes resources in order. */

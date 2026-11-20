@@ -13,6 +13,37 @@ export const TASK_LIMITS = {
   retryDelayMs: { min: 1_000, max: 3_600_000, default: 5_000 },
 } as const;
 
+/** Fields a user sets on a task. */
+export interface TaskInput {
+  name: string;
+  cronSchedule: string;
+  timezone: string;
+  webhookUrl: string;
+  payload: DiscordPayload;
+  maxRetry: number;
+  retryDelayMs: number;
+}
+
+export interface Task extends TaskInput {
+  id: string;
+  status: TaskStatus;
+  lastRunAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TaskLog {
+  id: string;
+  taskId: string;
+  executedAt: Date;
+  status: TaskLogStatus;
+  retryCount: number;
+  httpStatus: number | null;
+  durationMs: number | null;
+  message: string;
+  createdAt: Date;
+}
+
 export interface DiscordEmbedField {
   name: string;
   value: string;

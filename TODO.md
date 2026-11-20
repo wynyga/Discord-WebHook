@@ -21,20 +21,23 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 - [x] Record AI session #2 (schema design)
 
 ## Phase 3: Backend core
-- [ ] Domain entities and repository interfaces
-- [ ] Use cases: create, update, delete, list, get, pause, resume
-- [ ] Drizzle repositories
-- [ ] Zod schemas: cron, IANA timezone, Discord URL hosts, payload limits, retry bounds, overlap rule
-- [ ] `PATCH` keeps the stored webhook URL when none is sent; mask URLs in responses
-- [ ] `POST /auth/login` and JWT middleware, login rate limit
+- [x] Domain entities and repository interfaces
+- [x] Use cases: create, update, delete, list, get, pause, resume
+- [x] Drizzle repositories (tested on PGlite with the real migrations)
+- [x] Zod schemas: cron, IANA timezone, Discord URL hosts, payload limits, retry bounds, overlap rule
+- [x] `PATCH` keeps the stored webhook URL when none is sent; mask URLs in responses
+- [x] `POST /auth/login` and JWT middleware, login rate limit
 - [x] Config module: Zod-parsed env, refuse dev secrets in production
-- [ ] Routers (error handler and pino logging done in Phase 1)
-- [ ] `/health` pings Postgres and Redis
-- [ ] Record AI session #3 (API planning)
+- [x] Routers (error handler and pino logging done in Phase 1)
+- [x] Composition root (`container.ts`); scheduler is a logging stand-in until Phase 4
+- [ ] `/health` pings Postgres and Redis (Postgres done; Redis in Phase 4)
+- [x] Record AI session #3 (API planning)
 
 ## Phase 4: Scheduler, retry, Discord
 - [ ] `DiscordPort` and webhook client (`?wait=true`, `RateLimitedError` with `retry_after`)
-- [ ] BullMQ scheduler adapter in `infrastructure/` (register, remove, run now)
+- [ ] BullMQ scheduler adapter in `infrastructure/` (register, remove, run now), replacing
+      `LoggingScheduler` in `container.ts`
+- [ ] `POST /tasks/:id/run` route and `RunTaskNow` use case
 - [ ] Worker in `presentation/worker/` calling the `ExecuteTask` use case
 - [ ] Per-attempt `task_logs` rows
 - [ ] Retry with backoff: custom strategy for 429, `UnrecoverableError` for other 4xx
