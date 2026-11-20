@@ -13,12 +13,12 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 - [x] Record AI session #1 (setup) in `docs/ai-usage/`
 
 ## Phase 2: Database
-- [ ] Draw schema (`tasks`, `task_logs`) and review
-- [ ] Drizzle schema files
-- [ ] Generate migrations with drizzle-kit
-- [ ] `task_logs.duration_ms` for the webhook call time
-- [ ] Apply migrations from backend code at boot
-- [ ] Record AI session #2 (schema design)
+- [x] Draw schema (`tasks`, `task_logs`) and review
+- [x] Drizzle schema files
+- [x] Generate migrations with drizzle-kit
+- [x] `task_logs.duration_ms` for the webhook call time
+- [x] Apply migrations from backend code at boot
+- [x] Record AI session #2 (schema design)
 
 ## Phase 3: Backend core
 - [ ] Domain entities and repository interfaces
@@ -66,7 +66,8 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 ## Phase 7: Docker
 - [ ] Backend Dockerfile (multi-stage)
 - [ ] Frontend Dockerfile (build + nginx, proxy `/api`)
-- [ ] `docker-compose.yml` with postgres, redis, healthchecks
+- [ ] `docker-compose.yml` with postgres, redis, healthchecks (draft with postgres, redis, pgadmin
+      exists locally, not committed or tested yet)
 - [ ] Optional `.env` (`required: false`) and local defaults for every variable
 - [ ] `pgadmin` service under the `tools` profile (uses `docker/pgadmin/servers.json`)
 - [ ] Verify clean `docker compose up`

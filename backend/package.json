@@ -11,7 +11,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file-if-exists=../.env src/infrastructure/database/migrate-cli.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "license": "UNLICENSED",
   "type": "module",

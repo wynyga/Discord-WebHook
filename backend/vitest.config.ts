@@ -9,7 +9,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/server.ts', 'src/infrastructure/database/migrations/**'],
+      exclude: ['src/server.ts', 'src/infrastructure/database/migrate-cli.ts'],
       reporter: ['text', 'html'],
       thresholds: {
         lines: 80,

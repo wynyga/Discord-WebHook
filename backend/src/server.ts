@@ -1,31 +1,39 @@
 import type { Server } from 'node:http';
 import { loadConfig } from './config/env.js';
-import { createLogger } from './infrastructure/logger.js';
+import { createDatabase } from './infrastructure/database/client.js';
+import { runMigrations } from './infrastructure/database/migrate.js';
+import { createLogger, type Logger } from './infrastructure/logger.js';
 import { createApp } from './presentation/http/app.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
-function main(): void {
+type Closer = () => Promise<void>;
+
+async function main(): Promise<void> {
   const config = loadConfig();
   const logger = createLogger(config);
+
+  const database = createDatabase(config.databaseUrl);
+  await runMigrations(database.db, logger);
 
   const app = createApp({
     logger,
     corsOrigin: config.corsOrigin,
-    healthChecks: {},
+    healthChecks: { database: database.ping },
   });
 
   const server = app.listen(config.port, () => {
     logger.info({ port: config.port }, 'API listening');
   });
 
-  registerShutdown(server, logger);
+  registerShutdown(server, logger, [database.close]);
 }
 
-function registerShutdown(server: Server, logger: ReturnType<typeof createLogger>): void {
+/** Stops accepting requests, then closes resources in order. */
+function registerShutdown(server: Server, logger: Logger, closers: Closer[]): void {
   let shuttingDown = false;
 
-  const shutdown = (signal: NodeJS.Signals) => {
+  const shutdown = async (signal: NodeJS.Signals) => {
     if (shuttingDown) return;
     shuttingDown = true;
     logger.info({ signal }, 'Shutting down');
@@ -36,22 +44,21 @@ function registerShutdown(server: Server, logger: ReturnType<typeof createLogger
     }, SHUTDOWN_TIMEOUT_MS);
     timer.unref();
 
-    server.close((err) => {
-      if (err) {
-        logger.error({ err }, 'Error while closing HTTP server');
-        process.exit(1);
-      }
+    try {
+      await new Promise<void>((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
+      for (const close of closers) await close();
       process.exit(0);
-    });
+    } catch (err) {
+      logger.error({ err }, 'Error during shutdown');
+      process.exit(1);
+    }
   };
 
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 }
 
-try {
-  main();
-} catch (err) {
+main().catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
-}
+});
