@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ValidationError } from '../../src/domain/errors.js';
+import { TASK_LIMITS } from '../../src/domain/task.js';
 import {
+  describeSchedule,
   assertRetryWindowFits,
   isValidCron,
   isValidTimezone,
@@ -24,6 +26,26 @@ describe('isValidCron', () => {
     ['garbage', 'every day'],
   ])('rejects %s', (_label, expr) => {
     expect(isValidCron(expr)).toBe(false);
+  });
+});
+
+describe('describeSchedule', () => {
+  it.each([
+    ['*/5 * * * *', 'Every 5 minutes'],
+    ['0 * * * *', 'Every hour'],
+    ['0 9 * * 1-5', 'At 09:00, Monday through Friday'],
+  ])('reads %s as "%s"', (cron, text) => {
+    expect(describeSchedule(cron)).toBe(text);
+  });
+
+  it('falls back to the expression when it cannot be described', () => {
+    expect(describeSchedule('not a cron')).toBe('not a cron');
+  });
+
+  it('cuts very long descriptions to the limit', () => {
+    const text = describeSchedule('0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29 * * * *');
+
+    expect(text.length).toBeLessThanOrEqual(TASK_LIMITS.scheduleTextMaxLength);
   });
 });
 

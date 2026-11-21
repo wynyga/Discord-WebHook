@@ -1,3 +1,4 @@
+import { describeSchedule } from './schedule.js';
 import type { Task } from './task.js';
 
 /**
@@ -6,7 +7,8 @@ import type { Task } from './task.js';
  */
 export const TEMPLATE_VARIABLES = [
   { name: 'task.name', description: 'Task name' },
-  { name: 'task.schedule', description: 'Cron expression' },
+  { name: 'task.schedule', description: 'Schedule in words, e.g. Every 5 minutes' },
+  { name: 'task.cron', description: 'Cron expression, e.g. */5 * * * *' },
   { name: 'task.timezone', description: 'Task timezone' },
   { name: 'run.date', description: 'Run date in the task timezone, e.g. 21 Nov 2026' },
   { name: 'run.time', description: 'Run time in the task timezone, e.g. 09:00' },
@@ -74,7 +76,8 @@ export function templateValues(
   const time = inZone({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   return {
     'task.name': task.name,
-    'task.schedule': task.cronSchedule,
+    'task.schedule': describeSchedule(task.cronSchedule),
+    'task.cron': task.cronSchedule,
     'task.timezone': task.timezone,
     'run.date': date,
     'run.time': time,
@@ -89,10 +92,16 @@ export function templateValues(
  * The longest value each variable can take. Validating a template rendered with these proves the
  * real message stays within Discord's limits on every run.
  */
-export function worstCaseValues(limits: { nameMaxLength: number; cronMaxLength: number; timezoneMaxLength: number }): TemplateValues {
+export function worstCaseValues(limits: {
+  nameMaxLength: number;
+  cronMaxLength: number;
+  scheduleTextMaxLength: number;
+  timezoneMaxLength: number;
+}): TemplateValues {
   return {
     'task.name': 'x'.repeat(limits.nameMaxLength),
-    'task.schedule': 'x'.repeat(limits.cronMaxLength),
+    'task.schedule': 'x'.repeat(limits.scheduleTextMaxLength),
+    'task.cron': 'x'.repeat(limits.cronMaxLength),
     'task.timezone': 'x'.repeat(limits.timezoneMaxLength),
     'run.date': '30 Sept 2026',
     'run.time': '23:59',

@@ -3,9 +3,15 @@
  * fills them at send time and validates them on save; here they power the insert buttons and the
  * preview.
  */
+import { describeCron } from './cron';
+
+/** Same cut as the backend's `scheduleTextMaxLength`. */
+const SCHEDULE_TEXT_MAX = 200;
+
 export const TEMPLATE_VARIABLES = [
   { name: 'task.name', description: 'Task name' },
-  { name: 'task.schedule', description: 'Cron expression' },
+  { name: 'task.schedule', description: 'Schedule in words, e.g. Every 5 minutes' },
+  { name: 'task.cron', description: 'Cron expression, e.g. */5 * * * *' },
   { name: 'task.timezone', description: 'Task timezone' },
   { name: 'run.date', description: 'Run date, e.g. 21 Nov 2026' },
   { name: 'run.time', description: 'Run time, e.g. 09:00' },
@@ -41,7 +47,8 @@ export function templateValues(
   const time = inZone({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   return {
     'task.name': task.name,
-    'task.schedule': task.cronSchedule,
+    'task.schedule': scheduleText(task.cronSchedule),
+    'task.cron': task.cronSchedule,
     'task.timezone': task.timezone,
     'run.date': date,
     'run.time': time,
@@ -50,6 +57,11 @@ export function templateValues(
     'run.iso': at.toISOString(),
     'run.attempt': String(attempt),
   };
+}
+
+function scheduleText(cron: string): string {
+  const text = describeCron(cron) ?? cron;
+  return text.length > SCHEDULE_TEXT_MAX ? `${text.slice(0, SCHEDULE_TEXT_MAX - 1)}…` : text;
 }
 
 /** Fills variables in every string of a parsed payload; unknown ones stay as written. */

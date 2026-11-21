@@ -103,6 +103,11 @@ describe('template helpers (mirror of the backend)', () => {
     });
   });
 
+  it('describes the schedule in words and keeps the raw cron in task.cron', () => {
+    expect(values).toMatchObject({ 'task.schedule': 'At 09:00, Monday through Friday', 'task.cron': '0 9 * * 1-5' });
+    expect(templateValues({ name: 'n', cronSchedule: '*/5 * * * *', timezone: 'UTC' }, new Date())['task.schedule']).toBe('Every 5 minutes');
+  });
+
   it('lists unknown variables', () => {
     expect(unknownVariables({ content: '{{task.name}} {{who}}', embeds: [{ title: '{{when}}' }] })).toEqual(['who', 'when']);
   });

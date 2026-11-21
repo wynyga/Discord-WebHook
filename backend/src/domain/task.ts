@@ -8,6 +8,8 @@ export type TaskLogStatus = (typeof TASK_LOG_STATUSES)[number];
 export const TASK_LIMITS = {
   nameMaxLength: 100,
   cronMaxLength: 100,
+  /** Longest readable schedule (`Every 5 minutes`) put into a message; longer ones are cut. */
+  scheduleTextMaxLength: 200,
   timezoneMaxLength: 64,
   maxRetry: { min: 0, max: 10, default: 3 },
   retryDelayMs: { min: 1_000, max: 3_600_000, default: 5_000 },

@@ -16,7 +16,8 @@ describe('templateValues', () => {
   it('formats run values in the task timezone', () => {
     expect(templateValues(task, AT, 1)).toEqual({
       'task.name': 'Daily report',
-      'task.schedule': '0 9 * * 1-5',
+      'task.schedule': 'At 09:00, Monday through Friday',
+      'task.cron': '0 9 * * 1-5',
       'task.timezone': 'Asia/Jakarta',
       'run.date': '20 Nov 2026',
       'run.time': '09:00',
@@ -104,7 +105,8 @@ describe('findUnknownVariables', () => {
 describe('worstCaseValues', () => {
   it('is at least as long as any real value', () => {
     const worst = worstCaseValues(TASK_LIMITS);
-    const real = templateValues({ name: 'n', cronSchedule: '* * * * *', timezone: 'America/Argentina/ComodRivadavia' }, new Date('2026-09-30T23:59:59Z'), 11);
+    const longCron = '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 1,2,3,4,5,6,7 1,2,3 1,2 1-5';
+    const real = templateValues({ name: 'n', cronSchedule: longCron, timezone: 'America/Argentina/ComodRivadavia' }, new Date('2026-09-30T23:59:59Z'), 11);
 
     for (const key of Object.keys(real) as Array<keyof typeof real>) {
       expect(worst[key].length).toBeGreaterThanOrEqual(real[key].length);

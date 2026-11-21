@@ -1,6 +1,7 @@
 import { CronExpressionParser } from 'cron-parser';
+import cronstrue from 'cronstrue';
 import { ValidationError } from './errors.js';
-import type { TaskInput } from './task.js';
+import { TASK_LIMITS, type TaskInput } from './task.js';
 
 /** Upcoming runs sampled to find the shortest gap of an irregular expression like `0 9,17 * * *`. */
 const INTERVAL_SAMPLES = 50;
@@ -60,4 +61,19 @@ export function assertRetryWindowFits(
       hint: 'Lower maxRetry or retryDelayMs, or schedule the task less often',
     });
   }
+}
+
+/**
+ * The schedule in words (`Every 5 minutes`, `At 09:00, Monday through Friday`), the same text the
+ * frontend shows. Falls back to the expression itself and is cut to `scheduleTextMaxLength`.
+ */
+export function describeSchedule(expression: string): string {
+  let text: string;
+  try {
+    text = cronstrue.toString(expression, { use24HourTimeFormat: true, throwExceptionOnParseError: true });
+  } catch {
+    text = expression;
+  }
+  const max = TASK_LIMITS.scheduleTextMaxLength;
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }

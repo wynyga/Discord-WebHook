@@ -117,7 +117,9 @@ one embed with fields) as a form, or any Discord payload as JSON, with a live pr
 
 | Variable | Example |
 |---|---|
-| `{{task.name}}`, `{{task.schedule}}`, `{{task.timezone}}` | Daily report, `0 9 * * 1-5`, Asia/Jakarta |
+| `{{task.name}}`, `{{task.timezone}}` | Daily report, Asia/Jakarta |
+| `{{task.schedule}}` | Every 5 minutes; At 09:00, Monday through Friday |
+| `{{task.cron}}` | `0 9 * * 1-5` (wrap it in backticks, Discord reads `*` as Markdown) |
 | `{{run.date}}`, `{{run.time}}`, `{{run.datetime}}` | 21 Nov 2026, 09:00 (in the task timezone) |
 | `{{run.weekday}}` | Friday |
 | `{{run.iso}}` | `2026-11-21T02:00:00.000Z`, for an embed `timestamp` |
