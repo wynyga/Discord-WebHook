@@ -9,6 +9,9 @@ and [TODO.md](TODO.md) for progress.
 **Quick start:** `docker compose up -d --build`, then open http://localhost:8080 and sign in with
 `admin` / `admin`.
 
+**Live demo:** https://discordweebhook.tech (see [Deployment](#deployment); credentials are shared
+with the submission).
+
 ## Stack
 
 | Part | Tech |
@@ -26,7 +29,7 @@ and [TODO.md](TODO.md) for progress.
 backend/    Express API and worker (clean architecture)
 frontend/   Vite + React SPA (dashboard, tasks, logs)
 docker/     Container config (pgAdmin server list)
-docs/       Database notes and AI-usage records
+docs/       Database notes, design references, Postman collection, AI-usage records
 ```
 
 ## Run in Docker (one command)
@@ -60,6 +63,28 @@ If a host port is taken, set `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT` or
 
 The defaults are for local use. For a real deployment set `NODE_ENV=production`, `JWT_SECRET` and
 `ADMIN_PASSWORD`; the backend refuses to start in production with the dev defaults.
+
+## Deployment
+
+The app runs on a personal server (VPS) at **https://discordweebhook.tech** with the same Docker
+Compose file, plus a server-only `docker-compose.override.yml` that adds Caddy:
+
+- The domain points to the server through DNS. Caddy terminates HTTPS with a Let's Encrypt
+  certificate and redirects `http://` and `www.` to `https://discordweebhook.tech`.
+- `NODE_ENV=production`, so the backend refuses to start with the dev `JWT_SECRET` or password.
+- Only the web server is public. The backend, Postgres and Redis ports are closed from the
+  internet; the browser reaches the API through `/api`.
+
+Update it with:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+Checked after deploying: health reports Postgres and Redis up, the API answers 401 without a token,
+"run now" and a per-minute cron both delivered to Discord (HTTP 200), and a wrong webhook token
+failed without retries. Details in [AI session 5](docs/ai-usage/05-payload-templates-and-deploy.md).
 
 ## Configuration
 
@@ -263,10 +288,12 @@ This project is developed with Claude Code (CLI). Each session's PLAN/TODO outpu
 | 2 | Database schema design | [02-database-schema.md](docs/ai-usage/02-database-schema.md) |
 | 3 | API endpoint planning | [03-api-endpoints.md](docs/ai-usage/03-api-endpoints.md) |
 | 4 | Unit test generation | [04-unit-tests.md](docs/ai-usage/04-unit-tests.md) |
+| 5 | Payload templates, form editor, deployment check | [05-payload-templates-and-deploy.md](docs/ai-usage/05-payload-templates-and-deploy.md) |
 
 ## Design references
 
-UI inspiration from Dribbble, listed in [PLAN.md](PLAN.md#design-references-dribbble).
+UI inspiration from Dribbble: the shots, what each one shaped and the visual style are in
+[docs/design-references.md](docs/design-references.md).
 
 ## Open-source libraries
 
@@ -287,7 +314,7 @@ UI inspiration from Dribbble, listed in [PLAN.md](PLAN.md#design-references-drib
 | react, react-dom, react-router | UI and routing |
 | @tanstack/react-query | Server state, caching and background refresh |
 | tailwindcss, @tailwindcss/vite | Styling |
-| cronstrue | Cron expressions in plain words |
+| cronstrue | Cron expressions in plain words (form preview and `{{task.schedule}}`) |
 | @fontsource-variable/geist, geist-mono | Self-hosted UI and monospace fonts |
 | @oddbird/popover-polyfill | Popover API, loaded only in browsers that lack it |
 | vite, @vitejs/plugin-react | Dev server and build |

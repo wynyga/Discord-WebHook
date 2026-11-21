@@ -92,12 +92,14 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 - [x] Postman / Thunder Client collection (`docs/postman/`), JSON validated
 - [x] Run the collection end to end with newman against Docker: 15 requests, 15 assertions passed
 - [x] AI-usage section with PLAN/TODO outputs (four sessions in `docs/ai-usage/`)
-- [ ] Create the GitHub repo and push `main` (done by the author)
+- [x] Create the GitHub repo and push `main` (done by the author)
 
 ## Phase 9: Optional
-- [ ] Deploy to personal server with DNS
+- [x] Deploy to personal server with DNS (https://discordweebhook.tech), checked end to end
 - [x] Payload template variables (`{{task.*}}`, `{{run.*}}`): filled at send time, unknown ones
       rejected, worst-case length checked against Discord limits on save
 - [x] Payload editor: form for the common message, JSON for the rest, never drops data on switch
 - [x] Variable insert buttons (at the cursor) and a Discord-style live preview
-- [x] Tests: backend 304, frontend 115; checked in a browser and against the Docker API
+- [x] `{{task.schedule}}` in words ("Every 5 minutes"), `{{task.cron}}` for the raw expression
+- [x] Tests: backend 309, frontend 116; checked in a browser and against the Docker API
+- [x] Record AI session #5 (templates, editor, deployment check)
