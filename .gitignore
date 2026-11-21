@@ -26,3 +26,5 @@ Thumbs.db
 
 # Brief from the company, not part of the source
 Insignia Technical Test*.pdf
+
+*.tsbuildinfo
