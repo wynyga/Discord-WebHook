@@ -1,0 +1,361 @@
+{
+  "info": {
+    "name": "Discord Task Scheduler API",
+    "description": "Every endpoint of the backend, in an order that runs top to bottom (also with `npx newman run`).\n\n1. Start the stack: `docker compose up -d --build`.\n2. `baseUrl` points at the nginx proxy (http://localhost:8080/api); use http://localhost:3000 to call the backend directly.\n3. Run **Auth / Login** first: it stores the JWT in `token`, which every other request sends as a bearer token.\n4. **Tasks / Create task** stores the new id in `taskId`. Set `webhookUrl` to a real Discord webhook to see messages arrive; the default is a fake one, so runs are logged as failed (HTTP 404, not retried).\n5. **Tasks / Delete task** cleans up the task and its logs.\n\nImports into Postman and Thunder Client (Collections > Import).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "admin" },
+    { "key": "webhookUrl", "value": "https://discord.com/api/webhooks/100000000000000099/fake-token-for-postman" },
+    { "key": "token", "value": "" },
+    { "key": "taskId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "url": "{{baseUrl}}/health",
+        "description": "Public. 200 when Postgres and Redis answer, 503 otherwise."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 and dependencies up', () => {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().checks).to.eql({ database: 'up', redis: 'up' });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}" },
+            "description": "Public, rate limited (10 attempts per 15 minutes). Returns a JWT valid for JWT_EXPIRES_IN (default 1h)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 with a bearer token', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const { data } = pm.response.json();",
+                  "  pm.expect(data.tokenType).to.eql('Bearer');",
+                  "  pm.collectionVariables.set('token', data.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Request without token (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/tasks",
+            "description": "Shows that the API is not public."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('401 without a token', () => pm.response.to.have.status(401));"] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Create task",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman demo task\",\n  \"cronSchedule\": \"0 9 * * 1-5\",\n  \"timezone\": \"Asia/Jakarta\",\n  \"webhookUrl\": \"{{webhookUrl}}\",\n  \"payload\": {\n    \"content\": \"Task executed successfully!\",\n    \"username\": \"Task Bot\",\n    \"embeds\": [\n      {\n        \"title\": \"Task Completed\",\n        \"description\": \"Task #123 has been completed\",\n        \"color\": 3066993\n      }\n    ]\n  },\n  \"maxRetry\": 3,\n  \"retryDelayMs\": 5000\n}"
+            },
+            "description": "timezone, maxRetry and retryDelayMs are optional (UTC, 3, 5000). Validation errors come back as 400 with one entry per field in error.details."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201, scheduled and webhook masked', () => {",
+                  "  pm.response.to.have.status(201);",
+                  "  const { data } = pm.response.json();",
+                  "  pm.expect(data.status).to.eql('active');",
+                  "  pm.expect(data.webhookUrl).to.include('****');",
+                  "  pm.collectionVariables.set('taskId', data.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create task with invalid input (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Broken\",\n  \"cronSchedule\": \"every minute\",\n  \"webhookUrl\": \"https://example.com/hook\",\n  \"payload\": {}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 with field errors', () => {",
+                  "  pm.response.to.have.status(400);",
+                  "  const paths = pm.response.json().error.details.map((d) => d.path);",
+                  "  pm.expect(paths).to.include.members(['cronSchedule', 'webhookUrl']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List tasks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tasks?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"],
+              "query": [
+                { "key": "status", "value": "active", "disabled": true, "description": "active | paused | failed" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 with paging meta', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().meta).to.have.keys('page', 'pageSize', 'total', 'totalPages');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get task",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tasks/{{taskId}}", "description": "Includes nextRuns: the next five run times." },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 with the next five runs', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.nextRuns).to.have.lengthOf(5);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update task",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tasks/{{taskId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman demo task (renamed)\",\n  \"maxRetry\": 2\n}" },
+            "description": "Send only the fields to change. Without webhookUrl the stored one is kept."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 with the changes', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.maxRetry).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pause task",
+          "request": { "method": "POST", "url": "{{baseUrl}}/tasks/{{taskId}}/pause" },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('paused', () => pm.expect(pm.response.json().data.status).to.eql('paused'));"] }
+            }
+          ]
+        },
+        {
+          "name": "Resume task",
+          "request": { "method": "POST", "url": "{{baseUrl}}/tasks/{{taskId}}/resume" },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('active again', () => pm.expect(pm.response.json().data.status).to.eql('active'));"] }
+            }
+          ]
+        },
+        {
+          "name": "Run task now",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/tasks/{{taskId}}/run",
+            "description": "202: queued. The attempt shows up in the task's logs a moment later."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('202 queued', () => {",
+                  "  pm.response.to.have.status(202);",
+                  "  pm.expect(pm.response.json().data.status).to.eql('queued');",
+                  "});",
+                  "// Give the worker time to deliver before the logs requests run.",
+                  "setTimeout(() => {}, 3000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Task logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/logs?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "{{taskId}}", "logs"],
+              "query": [
+                { "key": "status", "value": "failed", "disabled": true, "description": "success | retrying | failed" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 with the run logged', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().meta.total).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "List logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/logs?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["logs"],
+              "query": [
+                { "key": "taskId", "value": "{{taskId}}", "disabled": true },
+                { "key": "status", "value": "failed", "disabled": true, "description": "success | retrying | failed" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/dashboard/summary",
+            "description": "Task counts by status, executions of the last 24 hours by outcome, and the same per hour."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 with totals and 24 hourly buckets', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const { data } = pm.response.json();",
+                  "  pm.expect(data.tasks).to.have.property('total');",
+                  "  pm.expect(data.activity24h).to.have.lengthOf(24);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete task",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/tasks/{{taskId}}", "description": "Also removes its schedule and logs." },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('204', () => pm.response.to.have.status(204));"] }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

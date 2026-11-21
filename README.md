@@ -6,7 +6,8 @@ Each task can be retried, every execution is logged, and a dashboard shows task 
 Built for the Insignia Full Stack Developer (R&D) technical test. See [PLAN.md](PLAN.md) for the design
 and [TODO.md](TODO.md) for progress.
 
-> Status: work in progress. Sections marked _TBD_ are filled in as their phase lands.
+**Quick start:** `docker compose up -d --build`, then open http://localhost:8080 and sign in with
+`admin` / `admin`.
 
 ## Stack
 
@@ -168,6 +169,16 @@ docker stop redis-test
 
 ## API endpoints
 
+**Postman / Thunder Client:** import
+[docs/postman/task-scheduler.postman_collection.json](docs/postman/task-scheduler.postman_collection.json).
+It runs top to bottom: Login stores the token, Create stores the task id, every request checks its
+status code, and the last request deletes the demo task. `baseUrl` defaults to the Docker stack
+(`http://localhost:8080/api`). From the command line:
+
+```bash
+npx newman run docs/postman/task-scheduler.postman_collection.json
+```
+
 Every route except `/health` and `/auth/login` needs `Authorization: Bearer <token>`. Get a token
 from `/auth/login` with `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
@@ -221,7 +232,7 @@ This project is developed with Claude Code (CLI). Each session's PLAN/TODO outpu
 | 1 | Initial project setup | [01-initial-setup.md](docs/ai-usage/01-initial-setup.md) |
 | 2 | Database schema design | [02-database-schema.md](docs/ai-usage/02-database-schema.md) |
 | 3 | API endpoint planning | [03-api-endpoints.md](docs/ai-usage/03-api-endpoints.md) |
-| 4 | Unit test generation | _TBD_ |
+| 4 | Unit test generation | [04-unit-tests.md](docs/ai-usage/04-unit-tests.md) |
 
 ## Design references
 

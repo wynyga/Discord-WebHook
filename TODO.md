@@ -56,8 +56,8 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 - [x] Discord client (mocked)
 - [x] Validation schemas
 - [x] Coverage threshold with `vitest --coverage`
-- [ ] Review the suite for gaps against the brief's list
-- [ ] Record AI session #4 (test generation)
+- [x] Review the suite for gaps against the brief's list
+- [x] Record AI session #4 (test generation)
 
 ## Phase 6: Frontend
 - [x] Look up web platform guidance (`modern-web-guidance`) and record the rules in PLAN section 6
@@ -87,11 +87,12 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
       completed them from a Linux container (both `npm ci` pass on Windows and Linux)
 
 ## Phase 8: Documentation
-- [ ] README: run locally, run in Docker, tests, API list, libraries
-- [ ] README: Dribbble design references
-- [ ] Postman / Thunder Client collection
-- [ ] AI-usage section with PLAN/TODO outputs
-- [ ] Create the GitHub repo and push `main`
+- [x] README: run locally, run in Docker, tests, API list, libraries
+- [x] README: Dribbble design references (in PLAN section 6, linked from README)
+- [x] Postman / Thunder Client collection (`docs/postman/`), JSON validated
+- [x] Run the collection end to end with newman against Docker: 15 requests, 15 assertions passed
+- [x] AI-usage section with PLAN/TODO outputs (four sessions in `docs/ai-usage/`)
+- [ ] Create the GitHub repo and push `main` (done by the author)
 
 ## Phase 9: Optional
 - [ ] Deploy to personal server with DNS
