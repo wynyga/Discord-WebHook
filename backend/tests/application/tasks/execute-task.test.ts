@@ -38,6 +38,20 @@ describe('ExecuteTask: delivery', () => {
     expect(discord.send).toHaveBeenCalledWith(WEBHOOK_URL, taskInput().payload);
   });
 
+  it('fills template variables with the values of this run before sending', async () => {
+    const task = await tasks.create({
+      ...taskInput({ timezone: 'Asia/Jakarta' }),
+      payload: { content: '{{task.name}} on {{run.date}} at {{run.time}}, attempt {{run.attempt}}' },
+      status: 'active',
+    });
+
+    await executeTask.execute(request(task, { attempt: 2 }));
+
+    // NOW is 10:00 UTC, 17:00 in Jakarta; attempt 2 (0-based) is the third try.
+    expect(discord.send).toHaveBeenCalledWith(WEBHOOK_URL, { content: 'Daily report on 1 May 2026 at 17:00, attempt 3' });
+    expect((await tasks.findById(task.id))?.payload.content).toContain('{{task.name}}');
+  });
+
   it('logs a success and records the run time', async () => {
     const task = await seedTask();
 

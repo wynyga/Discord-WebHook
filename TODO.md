@@ -96,4 +96,8 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 
 ## Phase 9: Optional
 - [ ] Deploy to personal server with DNS
-- [ ] Payload template variables (`{{task.name}}`, `{{executedAt}}`, `{{attempt}}`)
+- [x] Payload template variables (`{{task.*}}`, `{{run.*}}`): filled at send time, unknown ones
+      rejected, worst-case length checked against Discord limits on save
+- [x] Payload editor: form for the common message, JSON for the rest, never drops data on switch
+- [x] Variable insert buttons (at the cursor) and a Discord-style live preview
+- [x] Tests: backend 304, frontend 115; checked in a browser and against the Docker API

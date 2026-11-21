@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { isDiscordWebhookUrl } from '../../../domain/discord-webhook.js';
 import { isValidCron, isValidTimezone } from '../../../domain/schedule.js';
 import { TASK_LIMITS, TASK_STATUSES } from '../../../domain/task.js';
-import { discordPayloadSchema } from './discord-payload.schema.js';
 import { pageQueryShape } from './pagination.schema.js';
+import { payloadTemplateSchema } from './payload-template.schema.js';
 
 const { maxRetry, retryDelayMs } = TASK_LIMITS;
 
@@ -25,7 +25,7 @@ const taskFields = {
     .trim()
     .max(500)
     .refine(isDiscordWebhookUrl, 'Must be a Discord webhook URL: https://discord.com/api/webhooks/<id>/<token>'),
-  payload: discordPayloadSchema,
+  payload: payloadTemplateSchema,
   maxRetry: z.int().min(maxRetry.min).max(maxRetry.max),
   retryDelayMs: z.int().min(retryDelayMs.min).max(retryDelayMs.max),
 };

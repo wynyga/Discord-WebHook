@@ -1,5 +1,6 @@
 import { DiscordDeliveryError, type DiscordPort } from '../../domain/discord.js';
 import type { ExecutionRequest, ExecutionResult } from '../../domain/execution.js';
+import { renderTemplate, templateValues } from '../../domain/payload-template.js';
 import type { Task } from '../../domain/task.js';
 import type { TaskLogRepository } from '../../domain/task-log-repository.js';
 import type { TaskRepository } from '../../domain/task-repository.js';
@@ -28,7 +29,9 @@ export class ExecuteTask {
 
     const executedAt = this.now();
     try {
-      const delivery = await this.discord.send(task.webhookUrl, task.payload);
+      // The stored payload is a template; each attempt sends its own run's values.
+      const payload = renderTemplate(task.payload, templateValues(task, executedAt, request.attempt + 1));
+      const delivery = await this.discord.send(task.webhookUrl, payload);
       await this.logs.create({
         taskId: task.id,
         executedAt,

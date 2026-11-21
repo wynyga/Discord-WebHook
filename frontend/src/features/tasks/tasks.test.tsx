@@ -140,7 +140,8 @@ describe('Task form', () => {
     const { fetchMock } = mockApi({});
     renderRoutes(routes, '/tasks/new');
 
-    const payload = await screen.findByLabelText(/payload/i);
+    await user.click(await screen.findByRole('radio', { name: 'JSON' }));
+    const payload = screen.getByRole('textbox', { name: /^payload/i });
     await user.clear(payload);
     await user.type(payload, '{{not json');
     await user.click(screen.getByRole('button', { name: 'Create task' }));
@@ -188,9 +189,10 @@ describe('Task form', () => {
     await user.type(screen.getByLabelText(/discord webhook url/i), WEBHOOK);
     await user.click(screen.getByRole('button', { name: 'Create task' }));
 
-    const payload = screen.getByLabelText(/payload/i);
-    await waitFor(() => expect(payload).toHaveFocus());
-    expect(payload).toHaveAccessibleDescription(/embeds\.0\.title: Too big/);
+    // In the form view the message text is the payload's first control, so it takes the focus.
+    const text = screen.getByRole('textbox', { name: 'Text' });
+    await waitFor(() => expect(text).toHaveFocus());
+    expect(text).toHaveAccessibleDescription(/embeds\.0\.title: Too big/);
   });
 
   it('shows form-level API errors such as overlapping retries', async () => {

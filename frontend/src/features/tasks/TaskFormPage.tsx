@@ -7,12 +7,12 @@ import { Icon } from '../../components/Icon';
 import { ErrorState, LoadingState, PageHeader } from '../../components/Layout';
 import { useToast } from '../../components/Toasts';
 import { CUSTOM_PRESET, describeCron, SCHEDULE_PRESETS } from '../../lib/cron';
+import { PayloadEditor } from './PayloadEditor';
 import { useTask, useTaskActions } from './queries';
 import {
   cronOf,
   emptyValues,
   errorsFromApi,
-  EXAMPLE_PAYLOAD,
   FIELD_ORDER,
   type FormMode,
   type TaskFormErrors,
@@ -179,13 +179,6 @@ export function TaskForm({ mode, initial, maskedWebhook, cancelTo, onSubmit }: T
     }
   }
 
-  function formatPayload() {
-    try {
-      update('payload', JSON.stringify(JSON.parse(values.payload), null, 2), 'payload');
-    } catch {
-      setErrors((current) => ({ ...current, payload: 'Payload must be valid JSON.' }));
-    }
-  }
 
   return (
     <form noValidate onSubmit={handleSubmit} aria-label={mode === 'create' ? 'New task' : 'Edit task'}>
@@ -331,60 +324,6 @@ export function TaskForm({ mode, initial, maskedWebhook, cancelTo, onSubmit }: T
               />
             )}
           </Field>
-        </section>
-
-        <section className="card flex flex-col gap-5 p-5" aria-labelledby="section-message">
-          <h2 id="section-message" className="font-medium">
-            Message and retries
-          </h2>
-
-          <Field
-            id="payload"
-            label="Payload (JSON)"
-            required
-            error={errors.payload}
-            hint={
-              <>
-                Sent as is to Discord&apos;s{' '}
-                <a
-                  className="text-accent underline"
-                  href="https://discord.com/developers/docs/resources/webhook#execute-webhook"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Execute Webhook
-                </a>{' '}
-                endpoint. Needs <code>content</code> or <code>embeds</code>.
-              </>
-            }
-          >
-            {(control) => (
-              <textarea
-                {...control}
-                required
-                rows={14}
-                className="font-mono text-sm"
-                autoCorrect="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                value={values.payload}
-                onChange={(e) => update('payload', e.target.value, 'payload')}
-                onBlur={() => handleBlur('payload')}
-              />
-            )}
-          </Field>
-          <div className="-mt-2 flex flex-wrap gap-2">
-            <button type="button" className="btn btn-sm" onClick={formatPayload}>
-              Format JSON
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => update('payload', JSON.stringify(EXAMPLE_PAYLOAD, null, 2), 'payload')}
-            >
-              Insert example
-            </button>
-          </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field id="maxRetry" label="Max retries" required error={errors.maxRetry} hint="0 to 10 extra attempts.">
@@ -424,6 +363,19 @@ export function TaskForm({ mode, initial, maskedWebhook, cancelTo, onSubmit }: T
               )}
             </Field>
           </div>
+        </section>
+
+        <section className="card flex flex-col gap-5 self-start p-5" aria-labelledby="section-message">
+          <h2 id="section-message" className="font-medium">
+            Message
+          </h2>
+          <PayloadEditor
+            value={values.payload}
+            onChange={(text) => update('payload', text, 'payload')}
+            onBlur={() => handleBlur('payload')}
+            error={errors.payload}
+            task={{ name: values.name, cronSchedule: cronOf(values), timezone: values.timezone }}
+          />
         </section>
       </div>
 

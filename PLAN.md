@@ -205,5 +205,5 @@ At least three recorded Claude Code CLI sessions, each with its PLAN/TODO output
 6. Frontend
 7. Docker Compose and healthchecks
 8. README and AI-usage documentation; push to a public GitHub repo
-9. Optional: deploy to a personal server with DNS; payload template variables (`{{task.name}}`,
-   `{{executedAt}}`, `{{attempt}}`)
+9. Optional: deploy to a personal server with DNS; payload templates (done: `{{task.*}}` and
+   `{{run.*}}` variables filled at send time, form editor with JSON fallback and live preview)

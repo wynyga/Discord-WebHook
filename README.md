@@ -104,15 +104,43 @@ Sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` (default `admin` / `admin`). Se
 | Overview | Delivery figures of the last 24 h with trends, hourly activity chart (with a table view), task counts by status, recent runs |
 | Tasks | List with status, next and last run; filter by status; run now and pause/resume per row |
 | Task | Schedule split into fields, details, next 5 runs, payload, last failure; Runs tab; edit and delete (with confirmation) |
-| New / edit task | Schedule presets or custom cron with a readable preview, timezone, webhook, JSON payload, retries |
+| New / edit task | Schedule presets or custom cron with a readable preview, timezone, webhook, retries; message as a form or JSON with variables and a Discord-style preview |
 | Logs | Every attempt with status, retry number, HTTP code and duration; filter by task and status |
 
 Light and dark themes follow the system; the toggle in the sidebar overrides it for this browser.
 
+## Message templates
+
+The stored payload is a template: `{{variables}}` in any text are filled in on every run, so the
+same task sends a different date each day. The task form edits the common message (text, sender,
+one embed with fields) as a form, or any Discord payload as JSON, with a live preview.
+
+| Variable | Example |
+|---|---|
+| `{{task.name}}`, `{{task.schedule}}`, `{{task.timezone}}` | Daily report, `0 9 * * 1-5`, Asia/Jakarta |
+| `{{run.date}}`, `{{run.time}}`, `{{run.datetime}}` | 21 Nov 2026, 09:00 (in the task timezone) |
+| `{{run.weekday}}` | Friday |
+| `{{run.iso}}` | `2026-11-21T02:00:00.000Z`, for an embed `timestamp` |
+| `{{run.attempt}}` | 1 for the first try, 2 for the first retry |
+
+```json
+{
+  "content": "Sales report for {{run.date}} is ready.",
+  "embeds": [{ "title": "{{task.name}}", "description": "Generated on {{run.weekday}} at {{run.time}}.",
+               "fields": [{ "name": "Attempt", "value": "{{run.attempt}}", "inline": true }],
+               "timestamp": "{{run.iso}}" }]
+}
+```
+
+On save, unknown variables are rejected, and the template is checked with the longest value each
+variable can take, so no run can exceed Discord's limits. Values are filled into the parsed JSON,
+never into the text, so they cannot break its structure.
+
 ## How a task runs
 
 1. Creating or resuming a task registers a BullMQ job scheduler (cron pattern + timezone) in Redis.
-2. At each tick the worker POSTs the stored JSONB payload to the webhook with `?wait=true`.
+2. At each tick the worker fills the payload template's variables and POSTs it to the webhook
+   with `?wait=true`.
 3. Every attempt writes one `task_logs` row: `success`, `retrying` or `failed`, with `retry_count`,
    HTTP status and duration.
 4. Failures retry up to `maxRetry` times, `retryDelayMs` apart:
