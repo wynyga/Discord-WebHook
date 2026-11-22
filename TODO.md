@@ -103,3 +103,5 @@ Legend: `[ ]` open, `[x]` done. Phase details are in `PLAN.md`.
 - [x] `{{task.schedule}}` in words ("Every 5 minutes"), `{{task.cron}}` for the raw expression
 - [x] Tests: backend 309, frontend 116; checked in a browser and against the Docker API
 - [x] Record AI session #5 (templates, editor, deployment check)
+- [x] Schedule builder: repeat, days and time build the cron; Advanced keeps raw cron; a cron the
+      builder cannot show opens in Advanced unchanged

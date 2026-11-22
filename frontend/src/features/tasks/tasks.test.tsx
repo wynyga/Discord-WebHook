@@ -218,6 +218,60 @@ describe('Task form', () => {
     await waitFor(() => expect(alert).toHaveFocus());
   });
 
+  it('builds a custom schedule from choices instead of cron', async () => {
+    const user = userEvent.setup();
+    const { calls } = mockApi({
+      'POST /tasks': ({ body }) => json(201, { data: task({ ...(body as object), id: 'c2' }) }),
+      'GET /tasks/c2': () => json(200, { data: taskDetail({ id: 'c2' }) }),
+      'GET /logs': () => json(200, page([])),
+    });
+    renderRoutes(routes, '/tasks/new');
+
+    await user.type(await screen.findByLabelText(/^name/i), 'Twice a week');
+    await user.click(screen.getByRole('radio', { name: 'Custom' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly');
+    for (const day of ['Tue', 'Wed', 'Fri']) await user.click(screen.getByRole('checkbox', { name: day }));
+    const time = screen.getByLabelText('At');
+    await user.clear(time);
+    await user.type(time, '14:30');
+    await user.type(screen.getByLabelText(/discord webhook url/i), WEBHOOK);
+
+    expect(screen.getByText(/At 14:30, only on Monday and Thursday/)).toBeInTheDocument();
+    expect(screen.getByText('30 14 * * 1,4')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Create task' }));
+
+    await waitFor(() => expect(calls.find((c) => c.method === 'POST')?.body).toMatchObject({ cronSchedule: '30 14 * * 1,4' }));
+  });
+
+  it('flags a week with no days at once, and does not flag a schedule just for picking Custom', async () => {
+    const user = userEvent.setup();
+    mockApi({});
+    renderRoutes(routes, '/tasks/new');
+
+    await user.click(await screen.findByRole('radio', { name: 'Custom' }));
+    await user.tab();
+    expect(screen.queryByText(/Pick|Enter a cron/)).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Repeat' }), 'weekly');
+    for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']) await user.click(screen.getByRole('checkbox', { name: day }));
+
+    expect(screen.getByText('Pick at least one day.', { selector: '.field-error' })).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: 'Sat' }));
+    expect(screen.queryByText('Pick at least one day.', { selector: '.field-error' })).not.toBeInTheDocument();
+  });
+
+  it('opens a cron the builder cannot show in Advanced, unchanged', async () => {
+    const existing = taskDetail({ cronSchedule: '*/7 9-17 * * 1-5' });
+    mockApi({
+      [`GET /tasks/${existing.id}`]: () => json(200, { data: existing }),
+      'GET /logs': () => json(200, page([])),
+    });
+    renderRoutes(routes, `/tasks/${existing.id}/edit`);
+
+    expect(await screen.findByRole('combobox', { name: 'Repeat' })).toHaveValue('cron');
+    expect(screen.getByLabelText(/cron expression/i)).toHaveValue('*/7 9-17 * * 1-5');
+  });
+
   it('edits a task and keeps the stored webhook when left empty', async () => {
     const user = userEvent.setup();
     const existing = taskDetail({ cronSchedule: '15 3 * * *' });
@@ -229,7 +283,9 @@ describe('Task form', () => {
     renderRoutes(routes, `/tasks/${existing.id}/edit`);
 
     const name = await screen.findByLabelText(/^name/i);
-    expect(screen.getByLabelText(/cron expression/i)).toHaveValue('15 3 * * *');
+    // A cron the builder can show opens in it, not as raw text.
+    expect(screen.getByRole('combobox', { name: 'Repeat' })).toHaveValue('daily');
+    expect(screen.getByLabelText('At')).toHaveValue('03:15');
     expect(screen.getByLabelText(/discord webhook url/i)).toHaveAttribute('placeholder', existing.webhookUrl);
     await user.clear(name);
     await user.type(name, 'Renamed');

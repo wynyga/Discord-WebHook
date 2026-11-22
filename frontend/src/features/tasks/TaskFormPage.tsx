@@ -6,7 +6,9 @@ import { Field } from '../../components/Field';
 import { Icon } from '../../components/Icon';
 import { ErrorState, LoadingState, PageHeader } from '../../components/Layout';
 import { useToast } from '../../components/Toasts';
-import { CUSTOM_PRESET, describeCron, SCHEDULE_PRESETS } from '../../lib/cron';
+import { cronForPreset, CUSTOM_PRESET, describeCron, SCHEDULE_PRESETS } from '../../lib/cron';
+import { cronToBuilder, type ScheduleBuilder } from '../../lib/schedule-builder';
+import { ScheduleBuilderFields, scheduleErrorTarget, type ScheduleChange } from './ScheduleBuilderFields';
 import { PayloadEditor } from './PayloadEditor';
 import { useTask, useTaskActions } from './queries';
 import {
@@ -79,7 +81,7 @@ function TaskFormScreen({ mode, task }: { mode: FormMode; task?: Task }) {
 
 const FIELD_ID: Record<TaskFormField, string> = {
   name: 'name',
-  schedule: 'customCron',
+  schedule: 'schedule-frequency',
   timezone: 'timezone',
   webhookUrl: 'webhookUrl',
   payload: 'payload',
@@ -116,15 +118,44 @@ export function TaskForm({ mode, initial, maskedWebhook, cancelTo, onSubmit }: T
 
   useEffect(() => () => window.clearTimeout(announceTimer.current), []);
 
-  const schedulePreview = useMemo(() => describeCron(cronOf(values)), [values]);
+  const cron = cronOf(values);
+  const schedulePreview = useMemo(() => describeCron(cron), [cron]);
 
-  function update<K extends keyof TaskFormValues>(key: K, value: TaskFormValues[K], field: TaskFormField) {
+  function update<K extends keyof TaskFormValues>(
+    key: K,
+    value: TaskFormValues[K],
+    field: TaskFormField,
+    { markEdited = true }: { markEdited?: boolean } = {},
+  ) {
     const next = { ...values, [key]: value };
     setValues(next);
-    edited.current.add(field);
+    if (markEdited) edited.current.add(field);
     // While typing, only clear an error once it is fixed; never add one.
     if (errors[field] && !validateField(field, next, mode)) {
       setErrors(({ [field]: _removed, ...rest }) => rest);
+    }
+    return next;
+  }
+
+  /** Picking a preset only chooses; Custom starts from the preset's schedule so nothing resets. */
+  function choosePreset(presetId: string) {
+    if (presetId === CUSTOM_PRESET && values.schedulePreset !== CUSTOM_PRESET) {
+      const from = cronForPreset(values.schedulePreset);
+      if (from) {
+        setValues((current) => ({ ...current, schedulePreset: presetId, schedule: cronToBuilder(from) }));
+        return;
+      }
+    }
+    update('schedulePreset', presetId, 'schedule', { markEdited: false });
+  }
+
+  function updateSchedule(next: ScheduleBuilder, kind: ScheduleChange) {
+    const updated = update('schedule', next, 'schedule', { markEdited: kind !== 'choice' });
+    // Checkboxes commit on change, so their error shows at once instead of on blur.
+    if (kind === 'commit') {
+      const message = validateField('schedule', updated, mode);
+      setErrors(({ schedule: _old, ...rest }) => (message ? { ...rest, schedule: message } : rest));
+      if (message) setAnnouncement(message);
     }
   }
 
@@ -143,7 +174,12 @@ export function TaskForm({ mode, initial, maskedWebhook, cancelTo, onSubmit }: T
   function focusFirstError(found: TaskFormErrors) {
     const first = FIELD_ORDER.find((field) => found[field]);
     if (!first) return;
-    const id = first === 'schedule' && values.schedulePreset !== CUSTOM_PRESET ? 'schedule-custom' : FIELD_ID[first];
+    const id =
+      first !== 'schedule'
+        ? FIELD_ID[first]
+        : values.schedulePreset === CUSTOM_PRESET
+          ? scheduleErrorTarget(values.schedule)
+          : `schedule-${values.schedulePreset}`;
     document.getElementById(id)?.focus();
   }
 
@@ -218,7 +254,7 @@ export function TaskForm({ mode, initial, maskedWebhook, cancelTo, onSubmit }: T
           <fieldset className="flex flex-col gap-3">
             <legend className="mb-1.5 text-sm font-semibold">Schedule</legend>
             <div className="grid gap-2 sm:grid-cols-2">
-              {[...SCHEDULE_PRESETS, { id: CUSTOM_PRESET, label: 'Custom cron', cron: '' }].map((preset) => (
+              {[...SCHEDULE_PRESETS, { id: CUSTOM_PRESET, label: 'Custom', cron: '' }].map((preset) => (
                 <label
                   key={preset.id}
                   className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-line px-3 py-2 hover:border-line-strong has-checked:border-ink has-checked:bg-surface-2"
@@ -229,45 +265,30 @@ export function TaskForm({ mode, initial, maskedWebhook, cancelTo, onSubmit }: T
                     name="schedulePreset"
                     value={preset.id}
                     checked={values.schedulePreset === preset.id}
-                    onChange={() => update('schedulePreset', preset.id, 'schedule')}
+                    onChange={() => choosePreset(preset.id)}
                   />
-                  <span className="flex flex-col">
-                    {preset.label}
-                    {preset.cron && <code className="text-xs whitespace-nowrap text-muted">{preset.cron}</code>}
-                  </span>
+                  {preset.label}
                 </label>
               ))}
             </div>
 
             {values.schedulePreset === CUSTOM_PRESET && (
-              <Field
-                id="customCron"
-                label="Cron expression"
-                required
+              <ScheduleBuilderFields
+                value={values.schedule}
                 error={errors.schedule}
-                hint="minute hour day-of-month month day-of-week, e.g. 30 8 * * 1-5"
-              >
-                {(control) => (
-                  <input
-                    {...control}
-                    type="text"
-                    required
-                    className="font-mono"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    value={values.customCron}
-                    onChange={(e) => update('customCron', e.target.value, 'schedule')}
-                    onBlur={() => handleBlur('schedule')}
-                  />
-                )}
-              </Field>
+                onChange={updateSchedule}
+                onBlur={() => handleBlur('schedule')}
+              />
             )}
 
             <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm">
               <span className="text-muted">Runs: </span>
               {schedulePreview ? `${schedulePreview} (${values.timezone || 'UTC'})` : '—'}
+              {schedulePreview && (
+                <span className="block text-muted">
+                  Cron: <code className="text-fg">{cron}</code>
+                </span>
+              )}
             </p>
           </fieldset>
 

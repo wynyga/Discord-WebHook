@@ -129,7 +129,7 @@ Sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` (default `admin` / `admin`). Se
 | Overview | Delivery figures of the last 24 h with trends, hourly activity chart (with a table view), task counts by status, recent runs |
 | Tasks | List with status, next and last run; filter by status; run now and pause/resume per row |
 | Task | Schedule split into fields, details, next 5 runs, payload, last failure; Runs tab; edit and delete (with confirmation) |
-| New / edit task | Schedule presets or custom cron with a readable preview, timezone, webhook, retries; message as a form or JSON with variables and a Discord-style preview |
+| New / edit task | Schedule presets, or a custom schedule built from repeat, days and time (raw cron under Advanced), with a readable preview; timezone, webhook, retries; message as a form or JSON with variables and a Discord-style preview |
 | Logs | Every attempt with status, retry number, HTTP code and duration; filter by task and status |
 
 Light and dark themes follow the system; the toggle in the sidebar overrides it for this browser.

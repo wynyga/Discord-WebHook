@@ -1,11 +1,13 @@
 import type { FieldIssue, Task, TaskInput, TaskUpdate } from '../../api/types';
 import { cronForPreset, CUSTOM_PRESET, describeCron, presetFor, SCHEDULE_PRESETS } from '../../lib/cron';
+import { builderProblem, builderToCron, cronToBuilder, defaultBuilder, type ScheduleBuilder } from '../../lib/schedule-builder';
 
 /** What the form edits: strings for inputs, converted on submit. */
 export interface TaskFormValues {
   name: string;
   schedulePreset: string;
-  customCron: string;
+  /** Used when `schedulePreset` is custom. */
+  schedule: ScheduleBuilder;
   timezone: string;
   webhookUrl: string;
   payload: string;
@@ -49,7 +51,7 @@ export function emptyValues(): TaskFormValues {
   return {
     name: '',
     schedulePreset: SCHEDULE_PRESETS[0]!.id,
-    customCron: '',
+    schedule: defaultBuilder(),
     timezone: defaultTimezone(),
     webhookUrl: '',
     payload: JSON.stringify(EXAMPLE_PAYLOAD, null, 2),
@@ -64,7 +66,7 @@ export function valuesFromTask(task: Task): TaskFormValues {
   return {
     name: task.name,
     schedulePreset: preset,
-    customCron: preset === CUSTOM_PRESET ? task.cronSchedule : '',
+    schedule: preset === CUSTOM_PRESET ? cronToBuilder(task.cronSchedule) : defaultBuilder(),
     timezone: task.timezone,
     webhookUrl: '',
     payload: JSON.stringify(task.payload, null, 2),
@@ -74,7 +76,7 @@ export function valuesFromTask(task: Task): TaskFormValues {
 }
 
 export function cronOf(values: TaskFormValues): string {
-  return values.schedulePreset === CUSTOM_PRESET ? values.customCron.trim() : (cronForPreset(values.schedulePreset) ?? '');
+  return values.schedulePreset === CUSTOM_PRESET ? (builderToCron(values.schedule) ?? '') : (cronForPreset(values.schedulePreset) ?? '');
 }
 
 function isValidTimezone(timezone: string): boolean {
@@ -113,8 +115,10 @@ export function validateField(field: TaskFormField, values: TaskFormValues, mode
       return undefined;
     case 'schedule':
       if (values.schedulePreset !== CUSTOM_PRESET) return undefined;
-      if (!values.customCron.trim()) return 'Enter a cron expression.';
-      return describeCron(values.customCron) ? undefined : 'Use 5 fields: minute hour day month weekday, e.g. "*/5 * * * *".';
+      return (
+        builderProblem(values.schedule) ??
+        (describeCron(cronOf(values)) ? undefined : 'Use 5 fields: minute hour day month weekday, e.g. "*/5 * * * *".')
+      );
     case 'timezone':
       return isValidTimezone(values.timezone.trim()) ? undefined : 'Pick a timezone from the list, e.g. "Asia/Jakarta".';
     case 'webhookUrl': {

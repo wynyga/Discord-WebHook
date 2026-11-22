@@ -189,6 +189,13 @@
     border-color: var(--fg);
   }
 
+  /* The open list inherits the select's text color but not its background, so set both:
+     otherwise light text lands on the browser's white list in the dark theme. */
+  :where(select) :where(option, optgroup) {
+    background-color: var(--surface);
+    color: var(--fg);
+  }
+
   :where(input, select, textarea)[aria-invalid='true'] {
     border-color: var(--danger);
     box-shadow: inset 0 0 0 1px var(--danger);

@@ -10,6 +10,7 @@ import {
   valuesFromTask,
   type TaskFormValues,
 } from './task-form';
+import { cronToBuilder, defaultBuilder } from '../../lib/schedule-builder';
 
 const WEBHOOK = 'https://discord.com/api/webhooks/123456789012345678/abc_DEF-123';
 
@@ -25,8 +26,10 @@ describe('validation', () => {
   it.each([
     ['name', { name: '  ' }, 'Enter a name.'],
     ['name', { name: 'x'.repeat(101) }, 'Use at most 100 characters.'],
-    ['schedule', { schedulePreset: 'custom', customCron: '' }, 'Enter a cron expression.'],
-    ['schedule', { schedulePreset: 'custom', customCron: '0 0 * * * *' }, 'Use 5 fields'],
+    ['schedule', { schedulePreset: 'custom', schedule: { ...defaultBuilder(), frequency: 'cron', cron: '' } }, 'Enter a cron expression.'],
+    ['schedule', { schedulePreset: 'custom', schedule: { ...defaultBuilder(), frequency: 'cron', cron: '0 0 * * * *' } }, 'Use 5 fields'],
+    ['schedule', { schedulePreset: 'custom', schedule: { ...defaultBuilder(), frequency: 'daily', time: '' } }, 'Pick a time.'],
+    ['schedule', { schedulePreset: 'custom', schedule: { ...defaultBuilder(), frequency: 'weekly', weekdays: [] as number[] } }, 'Pick at least one day.'],
     ['timezone', { timezone: 'Mars/Base' }, 'Pick a timezone'],
     ['webhookUrl', { webhookUrl: '' }, 'Enter the Discord webhook URL.'],
     ['webhookUrl', { webhookUrl: 'https://example.com/hook' }, 'Use a Discord webhook URL'],
@@ -50,8 +53,9 @@ describe('validation', () => {
     expect(validateField('webhookUrl', values({ webhookUrl: url }), 'create')).toBeUndefined();
   });
 
-  it('ignores the custom cron while a preset is chosen', () => {
-    expect(validateField('schedule', values({ schedulePreset: 'hourly', customCron: 'junk' }), 'create')).toBeUndefined();
+  it('ignores the custom schedule while a preset is chosen', () => {
+    const junk = { ...defaultBuilder(), frequency: 'cron' as const, cron: 'junk' };
+    expect(validateField('schedule', values({ schedulePreset: 'hourly', schedule: junk }), 'create')).toBeUndefined();
   });
 });
 
@@ -69,8 +73,11 @@ describe('conversion', () => {
     expect(input.payload).toHaveProperty('content', 'Task executed successfully!');
   });
 
-  it('uses the custom cron when chosen', () => {
-    expect(toTaskInput(values({ schedulePreset: 'custom', customCron: ' 15 3 * * * ' })).cronSchedule).toBe('15 3 * * *');
+  it('uses the custom schedule when chosen', () => {
+    const weekly = { ...defaultBuilder(), frequency: 'weekly' as const, time: '14:30', weekdays: [4, 1] };
+    expect(toTaskInput(values({ schedulePreset: 'custom', schedule: weekly })).cronSchedule).toBe('30 14 * * 1,4');
+    const raw = { ...defaultBuilder(), frequency: 'cron' as const, cron: ' 15 3 * * * ' };
+    expect(toTaskInput(values({ schedulePreset: 'custom', schedule: raw })).cronSchedule).toBe('15 3 * * *');
   });
 
   it('leaves out an empty webhook on update', () => {
@@ -83,7 +90,7 @@ describe('conversion', () => {
 
     expect(form).toMatchObject({
       schedulePreset: 'custom',
-      customCron: '15 3 * * *',
+      schedule: cronToBuilder('15 3 * * *'),
       webhookUrl: '',
       retryDelay: '30',
       maxRetry: '3',
@@ -93,7 +100,7 @@ describe('conversion', () => {
   });
 
   it('recognises a preset schedule', () => {
-    expect(valuesFromTask(task({ cronSchedule: '0 * * * *' }))).toMatchObject({ schedulePreset: 'hourly', customCron: '' });
+    expect(valuesFromTask(task({ cronSchedule: '0 * * * *' }))).toMatchObject({ schedulePreset: 'hourly' });
   });
 });
 
